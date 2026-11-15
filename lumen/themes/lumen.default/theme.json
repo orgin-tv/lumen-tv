@@ -1,0 +1,59 @@
+{
+  "id": "lumen.default",
+  "name": "Lumen Default",
+  "version": "1.0.0",
+  "apiVersion": 1,
+  "author": "Lumen",
+  "description": "Warm cinematic amber accents with comfortable density and soft glass panels.",
+  "baseThemeName": "AMBER",
+  "tokens": {
+    "colors": {
+      "bg": "#0E0F12",
+      "bgElevated": "#17191E",
+      "cardBg": "#22262E",
+      "accent": "#E8B45A",
+      "accentStrong": "#C9892E",
+      "onAccent": "#111111",
+      "focus": "#F4D39A",
+      "focusBg": "#3A2E1C",
+      "text": "#F5F1EA",
+      "textSecondary": "#B8B2A6",
+      "textTertiary": "#857F74",
+      "border": "#333333"
+    },
+    "typography": {
+      "fontFamily": "DM_SANS",
+      "titleScale": 1.02
+    },
+    "spacing": {
+      "density": "comfortable",
+      "cardGap": "14px",
+      "safeGutter": "32px"
+    },
+    "shapes": {
+      "cardRadius": "18px",
+      "posterRadius": "12px",
+      "buttonRadius": "16px"
+    },
+    "motion": {
+      "fastMs": 150,
+      "normalMs": 220,
+      "cinematicMs": 700
+    },
+    "glass": {
+      "enabled": true,
+      "blur": "16px",
+      "opacity": 0.52
+    },
+    "hero": {
+      "gradientStrength": 0.78,
+      "titleShadow": true
+    },
+    "layout": {
+      "railScale": 1,
+      "expandingCards": true
+    }
+  },
+  "css": "theme.css",
+  "supporterOnly": false
+}

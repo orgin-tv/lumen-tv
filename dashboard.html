@@ -1,0 +1,102 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Lumen Dashboard</title>
+    <link rel="icon" href="assets/brand/lumen_mark.svg" type="image/svg+xml" />
+    <link rel="stylesheet" href="dashboard.css" />
+  </head>
+  <body>
+    <button type="button" class="scrim" id="nav-scrim" aria-label="Close menu"></button>
+    <div class="app">
+      <aside class="sidebar">
+        <a class="brand" href="dashboard.html">
+          <img src="assets/brand/lumen_mark.svg" alt="" width="28" height="28" />
+          <span>Lumen</span>
+        </a>
+        <p class="side-kicker">Library</p>
+        <nav>
+          <button type="button" data-nav="overview" class="is-active">Overview</button>
+          <button type="button" data-nav="profiles">Profiles</button>
+          <button type="button" data-nav="look">Look</button>
+          <button type="button" data-nav="addons">Addons</button>
+        </nav>
+        <p class="side-kicker">System</p>
+        <nav>
+          <button type="button" data-nav="updates">Updates</button>
+          <button type="button" data-nav="about">About</button>
+        </nav>
+        <a class="tv-link" href="index.html">Open TV app</a>
+      </aside>
+      <div class="main">
+        <header class="topbar">
+          <button type="button" id="nav-toggle" class="ghost" aria-label="Menu">Menu</button>
+          <div>
+            <p class="eyebrow">Dashboard</p>
+            <h1 id="dash-title">Overview</h1>
+          </div>
+          <p class="version">v<span id="app-version">…</span></p>
+        </header>
+        <p id="update-banner" class="banner" hidden></p>
+        <div class="content">
+          <section data-view="overview">
+            <div id="overview-body"></div>
+          </section>
+          <section data-view="profiles" hidden>
+            <p class="lede">
+              Profiles saved on this device. The active one is what the TV app opens next.
+            </p>
+            <div id="profiles-body" class="stack"></div>
+          </section>
+          <section data-view="look" hidden>
+            <p class="lede">
+              Designs change the picture only. Addons, playback, and the Nuvio updater stay put.
+            </p>
+            <form id="install-design" class="install">
+              <label for="design-url">Install a design</label>
+              <div class="install-row">
+                <input
+                  id="design-url"
+                  type="url"
+                  placeholder="https://…/theme.json"
+                  autocomplete="off"
+                />
+                <button type="submit" class="primary">Install</button>
+              </div>
+              <p id="design-status" class="meta"></p>
+            </form>
+            <div id="designs-body" class="design-grid"></div>
+          </section>
+          <section data-view="addons" hidden>
+            <p class="lede">
+              Addon manifests installed for the active profile. Manage them in the TV app.
+            </p>
+            <div id="addons-body" class="stack"></div>
+          </section>
+          <section data-view="updates" hidden>
+            <div id="update-body"></div>
+          </section>
+          <section data-view="about" hidden>
+            <article class="panel">
+              <h2>Lumen TV</h2>
+              <p>
+                Lumen is a fork of the open-source Nuvio TV project. This dashboard is the desk view
+                of the same library.
+              </p>
+              <p class="meta">Upstream: NuvioMedia/NuvioTVSmart · GPLv3</p>
+              <a
+                class="text-button"
+                href="https://github.com/NuvioMedia/NuvioTVSmart"
+                target="_blank"
+                rel="noreferrer"
+                >Nuvio on GitHub</a
+              >
+            </article>
+          </section>
+        </div>
+      </div>
+    </div>
+    <script type="module" src="dashboard.js"></script>
+  </body>
+</html>

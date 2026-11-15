@@ -1,0 +1,139 @@
+/*
+ * Lumen design-token bridge.
+ * Active only while a design package sets data-lumen-theme.
+ * Visual shell only — player, addons, and the Nuvio updater are untouched.
+ */
+
+:root {
+  --lumen-hero-overlay: linear-gradient(
+    90deg,
+    rgba(0, 0, 0, 0.92) 0%,
+    rgba(0, 0, 0, 0.55) 42%,
+    rgba(0, 0, 0, 0.08) 100%
+  );
+  --lumen-hero-overlay-bottom: linear-gradient(
+    180deg,
+    rgba(0, 0, 0, 0) 42%,
+    rgba(0, 0, 0, 0.88) 100%
+  );
+  --lumen-glass-bg: rgba(20, 20, 20, 0.72);
+  --lumen-glass-blur: 16px;
+  --lumen-glass-opacity: 0.52;
+  --lumen-title-shadow: none;
+  --lumen-card-expand-scale: 1.08;
+  --lumen-motion-fast-ms: 150ms;
+  --lumen-motion-normal-ms: 220ms;
+  --lumen-motion-cinematic-ms: 700ms;
+  --lumen-rail-scale: 1;
+  --lumen-density: comfortable;
+  --lumen-poster-radius: 8px;
+  --lumen-brand: var(--secondary-color);
+}
+
+/* Shell canvas + poster geometry (home ignores --tv-card-radius today) */
+html[data-lumen-theme] .home-screen-shell,
+html[data-lumen-theme] .home-shell,
+html[data-lumen-theme] .discover-shell,
+html[data-lumen-theme] .library-shell,
+html[data-lumen-theme] .search-screen-shell {
+  background: var(--bg-color);
+  color: var(--text-color);
+  --home-poster-radius: var(--lumen-poster-radius);
+  --home-row-gap: var(--tv-card-gap);
+}
+
+html[data-lumen-theme] .home-sidebar,
+html[data-lumen-theme] .modern-sidebar-panel {
+  background: var(--bg-color);
+  color: var(--text-color);
+}
+
+/* Billboard fades — all home layouts, not only classic/modern hooks */
+html[data-lumen-theme] .home-screen-shell .home-hero-card::before,
+html[data-lumen-theme] .home-screen-shell.home-layout-classic .home-hero-card::before,
+html[data-lumen-theme] .home-screen-shell.home-layout-modern .home-modern-hero-media::before {
+  background: var(--lumen-hero-overlay);
+}
+
+html[data-lumen-theme] .home-screen-shell .home-hero-card::after,
+html[data-lumen-theme] .home-screen-shell.home-layout-modern .home-modern-hero-media::after {
+  background: var(--lumen-hero-overlay-bottom);
+}
+
+html[data-lumen-theme] .home-screen-shell .home-hero-title-text,
+html[data-lumen-theme] .home-screen-shell .home-hero-logo {
+  color: var(--text-color);
+  text-shadow: var(--lumen-title-shadow);
+  font-weight: 700;
+  letter-spacing: -0.03em;
+}
+
+html[data-lumen-theme] .home-screen-shell .home-hero-meta-primary,
+html[data-lumen-theme] .home-screen-shell .home-hero-meta-secondary,
+html[data-lumen-theme] .home-screen-shell .home-hero-description {
+  color: var(--text-secondary);
+}
+
+html[data-lumen-theme] .home-screen-shell .home-row-title {
+  color: var(--text-color);
+  font-weight: 700;
+  letter-spacing: 0;
+}
+
+/* Focus ring and modest scale come from the active design. Hit targets stay the same. */
+html[data-lumen-theme] .home-screen-shell .home-poster-card.focused .home-poster-frame,
+html[data-lumen-theme]
+  .home-screen-shell
+  .home-poster-card.home-content-card.focused
+  .home-poster-frame {
+  border-color: var(--focus-color);
+  box-shadow: 0 0 0 3px var(--focus-color);
+  transform: scale(var(--lumen-card-expand-scale));
+  transform-origin: center center;
+  background-color: transparent;
+}
+
+html[data-lumen-theme] .home-screen-shell .home-content-card {
+  border-radius: var(--lumen-poster-radius);
+  transition-duration: var(--lumen-motion-fast-ms);
+}
+
+html[data-lumen-theme] .home-screen-shell .home-content-card.focused {
+  border-color: var(--focus-color);
+}
+
+/* Continue-watching progress uses brand red, not the white focus accent */
+html[data-lumen-theme] .home-progress-fill {
+  background: var(--lumen-brand);
+}
+
+html[data-lumen-theme] .home-progress-track {
+  background: rgba(255, 255, 255, 0.25);
+}
+
+html[data-lumen-theme] .settings-group-card,
+html[data-lumen-theme] .settings-appearance-group-card {
+  background-color: var(--bg-elevated);
+  border-radius: var(--tv-card-radius);
+  color: var(--text-color);
+}
+
+html[data-lumen-theme] .settings-theme-card,
+html[data-lumen-theme] .settings-content-focusable,
+html[data-lumen-theme] .home-nav-item,
+html[data-lumen-theme] .modern-sidebar-nav-item {
+  transition-duration: var(--lumen-motion-fast-ms);
+}
+
+html[data-lumen-theme] .home-nav-item.selected,
+html[data-lumen-theme] .modern-sidebar-nav-item.selected {
+  color: var(--text-color);
+}
+
+/* Player chrome stays on the upstream palette path */
+html[data-lumen-theme] .player-screen,
+html[data-lumen-theme] .player-overlay,
+html[data-lumen-theme] .player-controls,
+html[data-lumen-theme] .stream-screen {
+  --lumen-card-expand-scale: 1;
+}

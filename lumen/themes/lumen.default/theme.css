@@ -1,0 +1,13 @@
+:root,
+[data-lumen-theme="lumen.default"] {
+  --lumen-hero-overlay: linear-gradient(
+    90deg,
+    rgba(14, 15, 18, 0.92) 0%,
+    rgba(14, 15, 18, 0.55) 42%,
+    rgba(14, 15, 18, 0.08) 100%
+  );
+  --lumen-glass-bg: rgba(23, 25, 30, 0.52);
+  --lumen-card-expand-scale: 1.08;
+  --lumen-title-shadow: 0 8px 28px rgba(0, 0, 0, 0.45);
+  --tv-card-radius: 18px;
+}

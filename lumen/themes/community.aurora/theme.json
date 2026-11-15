@@ -1,0 +1,59 @@
+{
+  "id": "community.aurora",
+  "name": "Aurora Glass",
+  "version": "1.0.0",
+  "apiVersion": 1,
+  "author": "Lumen Community",
+  "description": "Sample installable design — cool glass panels, teal accents, cinematic hero fade.",
+  "baseThemeName": "JADE",
+  "tokens": {
+    "colors": {
+      "bg": "#07131A",
+      "bgElevated": "#0E1F2A",
+      "cardBg": "#143041",
+      "accent": "#3DDC97",
+      "accentStrong": "#1FA97A",
+      "onAccent": "#041016",
+      "focus": "#B8FFE0",
+      "focusBg": "#1A3A45",
+      "text": "#E8F7F1",
+      "textSecondary": "#9BB8B0",
+      "textTertiary": "#6F8A84",
+      "border": "#234852"
+    },
+    "typography": {
+      "fontFamily": "DM_SANS",
+      "titleScale": 1.06
+    },
+    "spacing": {
+      "density": "spacious",
+      "cardGap": "16px",
+      "safeGutter": "36px"
+    },
+    "shapes": {
+      "cardRadius": "20px",
+      "posterRadius": "14px",
+      "buttonRadius": "18px"
+    },
+    "motion": {
+      "fastMs": 140,
+      "normalMs": 260,
+      "cinematicMs": 820
+    },
+    "glass": {
+      "enabled": true,
+      "blur": "22px",
+      "opacity": 0.48
+    },
+    "hero": {
+      "gradientStrength": 0.9,
+      "titleShadow": true
+    },
+    "layout": {
+      "railScale": 1.04,
+      "expandingCards": true
+    }
+  },
+  "css": "theme.css",
+  "supporterOnly": false
+}

@@ -1,0 +1,23 @@
+node_modules
+dist
+build
+assets
+res
+services/**/runtime
+*.ipk
+*.wgt
+
+# Next.js Sync website build artifacts
+web/node_modules
+web/.next
+web/out
+
+# Cursor-generated identity helper (do not rewrite)
+web/cursor/identity.ts
+web/cursor/identity.dev.ts
+web/cursor/identity.dev.js
+
+# Local agent state is not project source.
+.claude
+.opencode
+.orchestration

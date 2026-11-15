@@ -1,0 +1,13 @@
+:root,
+[data-lumen-theme="community.aurora"] {
+  --lumen-hero-overlay: linear-gradient(
+    100deg,
+    rgba(7, 19, 26, 0.96) 0%,
+    rgba(7, 19, 26, 0.55) 40%,
+    rgba(7, 19, 26, 0.08) 100%
+  );
+  --lumen-glass-bg: rgba(14, 31, 42, 0.58);
+  --lumen-glass-blur: 22px;
+  --lumen-title-shadow: 0 12px 40px rgba(0, 0, 0, 0.55);
+  --tv-card-radius: 20px;
+}

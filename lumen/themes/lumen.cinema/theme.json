@@ -1,0 +1,59 @@
+{
+  "id": "lumen.cinema",
+  "name": "Lumen Cinema",
+  "version": "1.0.0",
+  "apiVersion": 1,
+  "author": "Lumen",
+  "description": "Cinematic density, deep blacks, and vivid crimson accents.",
+  "baseThemeName": "CRIMSON",
+  "tokens": {
+    "colors": {
+      "bg": "#0B0B0F",
+      "bgElevated": "#141418",
+      "cardBg": "#1C1C22",
+      "accent": "#E50914",
+      "accentStrong": "#B20710",
+      "onAccent": "#FFFFFF",
+      "focus": "#FFFFFF",
+      "focusBg": "#3D1518",
+      "text": "#FFFFFF",
+      "textSecondary": "#B3B3B3",
+      "textTertiary": "#808080",
+      "border": "#2A2A2A"
+    },
+    "typography": {
+      "fontFamily": "INTER",
+      "titleScale": 1.08
+    },
+    "spacing": {
+      "density": "compact",
+      "cardGap": "12px",
+      "safeGutter": "48px"
+    },
+    "shapes": {
+      "cardRadius": "6px",
+      "posterRadius": "4px",
+      "buttonRadius": "4px"
+    },
+    "motion": {
+      "fastMs": 140,
+      "normalMs": 240,
+      "cinematicMs": 800
+    },
+    "glass": {
+      "enabled": true,
+      "blur": "20px",
+      "opacity": 0.6
+    },
+    "hero": {
+      "gradientStrength": 0.9,
+      "titleShadow": true
+    },
+    "layout": {
+      "railScale": 1.05,
+      "expandingCards": true
+    }
+  },
+  "css": "theme.css",
+  "supporterOnly": false
+}

@@ -1,0 +1,29 @@
+{
+  "id": "space.lumen.webos",
+  "version": "1.4.1",
+  "vendor": "Lumen",
+  "type": "web",
+  "main": "index.html",
+  "title": "Lumen TV",
+  "appDescription": "Bring your sources together in one TV library — a Lumen fork of Nuvio.",
+  "keywords": ["streaming", "video", "media", "tv", "lumen"],
+  "category": "entertainment",
+  "icon": "icon.png",
+  "largeIcon": "largeIcon.png",
+  "splashBackground": "splash.png",
+  "iconColor": "#0e0f12",
+  "handlesRelaunch": true,
+  "resolution": "1920x1080",
+  "transparent": false,
+  "services": ["space.lumen.webos.service"],
+  "requiredPermissions": ["internet", "media.operation", "media.query"],
+  "requiredACG": [
+    "application.launcher",
+    "application.query",
+    "arc.query",
+    "externalinput.query",
+    "profile.query",
+    "settings.query",
+    "systemconfig.query"
+  ]
+}
