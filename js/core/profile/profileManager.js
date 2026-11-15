@@ -46,6 +46,18 @@ async function removeLocalProfileData(id) {
   }
 }
 
+const profileChangeListeners = new Set();
+
+function notifyProfileChange(reason = "update") {
+  profileChangeListeners.forEach((listener) => {
+    try {
+      listener({ reason });
+    } catch (error) {
+      console.warn("Profile change listener failed", error);
+    }
+  });
+}
+
 const DEFAULT_PROFILES = [
   {
     id: "1",
@@ -159,8 +171,17 @@ export const ProfileManager = {
         if (!previousIds.has(id)) await removeLocalProfileData(id);
       }
       LocalStore.set(PROFILES_KEY, normalized);
+      notifyProfileChange("replace");
       return true;
     });
+  },
+
+  subscribe(listener) {
+    if (typeof listener !== "function") {
+      return () => {};
+    }
+    profileChangeListeners.add(listener);
+    return () => profileChangeListeners.delete(listener);
   },
 
   getProfileDataVersion(profileId) {

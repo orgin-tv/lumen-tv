@@ -2,77 +2,38 @@
   var root = typeof globalThis !== "undefined" ? globalThis : window;
   var existing = root.__NUVIO_ENV__ || {};
 
+  function pick(key, fallback, requireNonEmpty) {
+    var value = existing[key];
+    if (typeof value === "undefined") return fallback;
+    if (requireNonEmpty && !String(value || "").trim()) return fallback;
+    return value;
+  }
+
   root.__NUVIO_ENV__ = {
-    NUVIO_SUPABASE_URL:
-      typeof existing.NUVIO_SUPABASE_URL === "undefined"
-        ? "http://127.0.0.1:3847/api/bridge"
-        : existing.NUVIO_SUPABASE_URL,
-    NUVIO_SUPABASE_ANON_KEY:
-      typeof existing.NUVIO_SUPABASE_ANON_KEY === "undefined"
-        ? "lumen-local-anon"
-        : existing.NUVIO_SUPABASE_ANON_KEY,
-    NUVIO_SUPABASE_FALLBACK_URL:
-      typeof existing.NUVIO_SUPABASE_FALLBACK_URL === "undefined"
-        ? ""
-        : existing.NUVIO_SUPABASE_FALLBACK_URL,
-    TV_LOGIN_WEB_BASE_URL:
-      typeof existing.TV_LOGIN_WEB_BASE_URL === "undefined"
-        ? "http://127.0.0.1:3847/tv-login"
-        : existing.TV_LOGIN_WEB_BASE_URL,
-    DEVICE_LOGIN_WEB_BASE_URL:
-      typeof existing.DEVICE_LOGIN_WEB_BASE_URL === "undefined"
-        ? "http://127.0.0.1:3847/link"
-        : existing.DEVICE_LOGIN_WEB_BASE_URL,
-    LUMEN_SYNC_URL:
-      typeof existing.LUMEN_SYNC_URL === "undefined"
-        ? "http://127.0.0.1:3847"
-        : existing.LUMEN_SYNC_URL,
-    YOUTUBE_PROXY_URL:
-      typeof existing.YOUTUBE_PROXY_URL === "undefined"
-        ? "youtube-proxy.html"
-        : existing.YOUTUBE_PROXY_URL,
-    INTRODB_API_URL:
-      typeof existing.INTRODB_API_URL === "undefined"
-        ? "https://api.introdb.app/"
-        : existing.INTRODB_API_URL,
-    IMDB_RATINGS_API_BASE_URL:
-      typeof existing.IMDB_RATINGS_API_BASE_URL === "undefined"
-        ? ""
-        : existing.IMDB_RATINGS_API_BASE_URL,
-    IMDB_TAPFRAME_API_BASE_URL:
-      typeof existing.IMDB_TAPFRAME_API_BASE_URL === "undefined"
-        ? ""
-        : existing.IMDB_TAPFRAME_API_BASE_URL,
-    AVATAR_PUBLIC_BASE_URL:
-      typeof existing.AVATAR_PUBLIC_BASE_URL === "undefined" ? "" : existing.AVATAR_PUBLIC_BASE_URL,
-    UNIQUE_CONTRIBUTIONS_BASE_URL:
-      typeof existing.UNIQUE_CONTRIBUTIONS_BASE_URL === "undefined"
-        ? ""
-        : existing.UNIQUE_CONTRIBUTIONS_BASE_URL,
-    SUPPORTERS_API_BASE_URL:
-      typeof existing.SUPPORTERS_API_BASE_URL === "undefined"
-        ? "https://nuvio.tv/"
-        : existing.SUPPORTERS_API_BASE_URL,
-    SUPPORT_URL:
-      typeof existing.SUPPORT_URL === "undefined"
-        ? "https://nuvio.tv/support"
-        : existing.SUPPORT_URL,
-    SPONSOR_NAMES:
-      typeof existing.SPONSOR_NAMES === "undefined" || !String(existing.SPONSOR_NAMES).trim()
-        ? "ragmehos."
-        : existing.SPONSOR_NAMES,
-    TMDB_API_KEY: typeof existing.TMDB_API_KEY === "undefined" ? "" : existing.TMDB_API_KEY,
-    TRAKT_CLIENT_ID:
-      typeof existing.TRAKT_CLIENT_ID === "undefined" ? "" : existing.TRAKT_CLIENT_ID,
-    TRAKT_CLIENT_SECRET:
-      typeof existing.TRAKT_CLIENT_SECRET === "undefined" ? "" : existing.TRAKT_CLIENT_SECRET,
-    SIMKL_CLIENT_ID:
-      typeof existing.SIMKL_CLIENT_ID === "undefined" ? "" : existing.SIMKL_CLIENT_ID,
-    SIMKL_APP_NAME:
-      typeof existing.SIMKL_APP_NAME === "undefined" || !String(existing.SIMKL_APP_NAME).trim()
-        ? "nuvio"
-        : existing.SIMKL_APP_NAME,
-    PREMIUMIZE_CLIENT_ID:
-      typeof existing.PREMIUMIZE_CLIENT_ID === "undefined" ? "" : existing.PREMIUMIZE_CLIENT_ID
+    NUVIO_SUPABASE_URL: pick("NUVIO_SUPABASE_URL", "http://127.0.0.1:3847/api/bridge", true),
+    NUVIO_SUPABASE_ANON_KEY: pick("NUVIO_SUPABASE_ANON_KEY", "lumen-local-anon", true),
+    NUVIO_SUPABASE_FALLBACK_URL: pick("NUVIO_SUPABASE_FALLBACK_URL", "", false),
+    TV_LOGIN_WEB_BASE_URL: pick("TV_LOGIN_WEB_BASE_URL", "http://127.0.0.1:3847/tv-login", true),
+    DEVICE_LOGIN_WEB_BASE_URL: pick(
+      "DEVICE_LOGIN_WEB_BASE_URL",
+      "http://127.0.0.1:3847/link",
+      true
+    ),
+    LUMEN_SYNC_URL: pick("LUMEN_SYNC_URL", "http://127.0.0.1:3847", true),
+    YOUTUBE_PROXY_URL: pick("YOUTUBE_PROXY_URL", "youtube-proxy.html", true),
+    INTRODB_API_URL: pick("INTRODB_API_URL", "https://api.introdb.app/", true),
+    IMDB_RATINGS_API_BASE_URL: pick("IMDB_RATINGS_API_BASE_URL", "", false),
+    IMDB_TAPFRAME_API_BASE_URL: pick("IMDB_TAPFRAME_API_BASE_URL", "", false),
+    AVATAR_PUBLIC_BASE_URL: pick("AVATAR_PUBLIC_BASE_URL", "", false),
+    UNIQUE_CONTRIBUTIONS_BASE_URL: pick("UNIQUE_CONTRIBUTIONS_BASE_URL", "", false),
+    SUPPORTERS_API_BASE_URL: pick("SUPPORTERS_API_BASE_URL", "https://nuvio.tv/", true),
+    SUPPORT_URL: pick("SUPPORT_URL", "https://nuvio.tv/support", true),
+    SPONSOR_NAMES: pick("SPONSOR_NAMES", "ragmehos.", true),
+    TMDB_API_KEY: pick("TMDB_API_KEY", "", false),
+    TRAKT_CLIENT_ID: pick("TRAKT_CLIENT_ID", "", false),
+    TRAKT_CLIENT_SECRET: pick("TRAKT_CLIENT_SECRET", "", false),
+    SIMKL_CLIENT_ID: pick("SIMKL_CLIENT_ID", "", false),
+    SIMKL_APP_NAME: pick("SIMKL_APP_NAME", "nuvio", true),
+    PREMIUMIZE_CLIENT_ID: pick("PREMIUMIZE_CLIENT_ID", "", false)
   };
 })();

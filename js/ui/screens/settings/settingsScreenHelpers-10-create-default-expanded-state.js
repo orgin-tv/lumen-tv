@@ -185,6 +185,7 @@ export function readSettingsUiState() {
   const state = LocalStore.get(SETTINGS_UI_STATE_KEY, null);
   return {
     activeSection: typeof state?.activeSection === "string" ? state.activeSection : null,
+    activeHub: typeof state?.activeHub === "string" ? state.activeHub : null,
     navIndex: Number.isFinite(state?.navIndex) ? state.navIndex : null,
     railScrollTop: Number.isFinite(state?.railScrollTop) ? Math.max(0, state.railScrollTop) : 0,
     contentFocusKey: typeof state?.contentFocusKey === "string" ? state.contentFocusKey : null,

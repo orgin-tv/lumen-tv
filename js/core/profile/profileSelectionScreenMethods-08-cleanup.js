@@ -7,6 +7,10 @@ export function createProfileSelectionScreenMethods08() {
       this.memberAccessUnsubscribe = null;
       this.profileBackgroundUnsubscribe?.();
       this.profileBackgroundUnsubscribe = null;
+      this.profileChangeUnsubscribe?.();
+      this.profileChangeUnsubscribe = null;
+      this.liveSyncUnsubscribe?.();
+      this.liveSyncUnsubscribe = null;
       this._destroyDialogs();
       this.cancelPendingProfileHold();
       this.suppressHoldMenuEnterUntilKeyUp = false;

@@ -18,6 +18,10 @@ export function createSettingsScreenMethods15() {
       this.settingsMountToken = (this.settingsMountToken || 0) + 1;
       this.memberAccessUnsubscribe?.();
       this.memberAccessUnsubscribe = null;
+      this.profileChangeUnsubscribe?.();
+      this.profileChangeUnsubscribe = null;
+      this.liveSyncUnsubscribe?.();
+      this.liveSyncUnsubscribe = null;
       this.persistUiState();
       this.stopTraktPolling?.();
       this.stopDebridDeviceAuth();

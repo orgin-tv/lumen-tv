@@ -24,6 +24,7 @@ export function createSettingsScreenMethods01() {
     DebridSettingsStore,
     StreamBadgeSettingsStore,
     ProfileManager,
+    StartupSyncService,
     AuthManager,
     Platform,
     isFastHorizontalNavigationEnabled,
@@ -33,6 +34,10 @@ export function createSettingsScreenMethods01() {
     getSidebarProfileState,
     SETTINGS_UI_STATE_KEY,
     SECTION_META,
+    SETTINGS_HUBS,
+    resolveSettingsHubId,
+    isSettingsHubId,
+    t,
     ROW_ICONS,
     escapeHtml,
     iconSvg,
@@ -58,6 +63,7 @@ export function createSettingsScreenMethods01() {
     },
     ensureShell() {
       if (
+        this.container?.querySelector?.(".settings-shell .settings-rail-title") &&
         this.container?.querySelector?.(".settings-shell .settings-sidebar-frame") &&
         this.container?.querySelector?.(".settings-shell .settings-content-frame")
       ) {
@@ -68,7 +74,10 @@ export function createSettingsScreenMethods01() {
             <div class="settings-root-sidebar-slot" data-settings-root-sidebar></div>
             <div class="settings-workspace">
               <div class="settings-sidebar-frame">
-                <aside class="settings-sidebar" data-settings-nav></aside>
+                <div class="settings-rail">
+                  <h1 class="settings-rail-title">${escapeHtml(t("settings.title", {}, "Settings"))}</h1>
+                  <aside class="settings-sidebar" data-settings-nav></aside>
+                </div>
                 ${settingsScrollIndicatorMarkup("vertical")}
                 ${settingsScrollIndicatorMarkup("horizontal")}
               </div>
@@ -99,14 +108,20 @@ export function createSettingsScreenMethods01() {
       this.restoreRailScrollTop = persistedUiState.railScrollTop;
       this.railScrollTop = persistedUiState.railScrollTop;
       this.suppressNextRailFocusScroll = Boolean(navigationContext?.isBackNavigation);
-      this.activeSection = persistedUiState.activeSection || this.activeSection || null;
+      const restoredSection = persistedUiState.activeSection || this.activeSection || "you";
+      this.activeHub = resolveSettingsHubId(persistedUiState.activeHub || restoredSection);
+      // Restore leaf drill-in when possible; otherwise land on the hub overview.
+      this.activeSection =
+        restoredSection && !isSettingsHubId(restoredSection) && resolveSettingsHubId(restoredSection) === this.activeHub
+          ? restoredSection
+          : this.activeHub;
       this.focusZone = "nav";
       this.sidebarFocusIndex = Number.isFinite(this.sidebarFocusIndex) ? this.sidebarFocusIndex : 0;
       this.navIndex = Number.isFinite(persistedUiState.navIndex)
         ? persistedUiState.navIndex
         : Number.isFinite(this.navIndex)
           ? this.navIndex
-          : SECTION_META.findIndex((section) => section.id === this.activeSection);
+          : SETTINGS_HUBS.findIndex((hub) => hub.id === this.activeHub);
       this.contentFocusKey = persistedUiState.contentFocusKey || this.contentFocusKey || null;
       this.appearanceThemeFocusKey = persistedUiState.appearanceThemeFocusKey || this.appearanceThemeFocusKey || null;
       this.pluginDraft = this.pluginDraft || "";
@@ -146,6 +161,16 @@ export function createSettingsScreenMethods01() {
         }
         void this.render({ refreshModel: true });
       });
+      this.profileChangeUnsubscribe = ProfileManager.subscribe?.(() => {
+        if (!this.isMounted || Router.getCurrent() !== "settings") return;
+        void this.render({ refreshModel: true });
+      });
+      this.liveSyncUnsubscribe = StartupSyncService.subscribeToPullCompleted?.((event) => {
+        if (!this.isMounted || Router.getCurrent() !== "settings") return;
+        if (event?.source === "live-sync" || event?.profilesChanged) {
+          void this.render({ refreshModel: true });
+        }
+      });
 
       // Android renders the settings surface from local state immediately and
       // refreshes remote membership/profile data independently. Keep the same
@@ -173,6 +198,7 @@ export function createSettingsScreenMethods01() {
     persistUiState() {
       LocalStore.set(SETTINGS_UI_STATE_KEY, {
         activeSection: this.activeSection || null,
+        activeHub: this.activeHub || resolveSettingsHubId(this.activeSection),
         navIndex: Number.isFinite(this.navIndex) ? this.navIndex : null,
         railScrollTop: this.getCurrentRailScrollTop(),
         contentFocusKey: this.contentFocusKey || null,
@@ -213,6 +239,7 @@ export function createSettingsScreenMethods01() {
         this.mediaServersView = null;
       }
       this.activeSection = sectionId || null;
+      this.activeHub = resolveSettingsHubId(this.activeSection);
       this.contentFocusKey = this.activeSection === "appearance" ? this.getAppearanceThemeFocusKey() : null;
       this.persistUiState();
     },
@@ -321,32 +348,49 @@ export function createSettingsScreenMethods01() {
         });
     },
     renderNav() {
+      const selectedHubId = this.activeHub || resolveSettingsHubId(this.activeSection);
       return this.visibleSections
         .map(
           (item, index) => `
-          <button class="settings-nav-item focusable${this.activeSection === item.id ? " selected" : ""}"
-                  data-zone="nav" role="tab" aria-selected="${this.activeSection === item.id ? "true" : "false"}"
+          <button class="settings-nav-item focusable${selectedHubId === item.id ? " selected" : ""}"
+                  data-zone="nav" role="tab" aria-selected="${selectedHubId === item.id ? "true" : "false"}"
                   data-nav-index="${index}"
                   data-focus-key="nav:${item.id}"
                   data-section="${item.id}">
             <span class="settings-nav-leading">
-              ${renderSectionNavIcon(item.id)}
+              <span class="settings-nav-icon-badge">${renderSectionNavIcon(item.id)}</span>
               <span class="settings-nav-label-wrap">
                 <span class="settings-nav-label">${escapeHtml(translateSectionCopy(item).label)}</span>
               </span>
             </span>
-            ${iconSvg(ROW_ICONS.chevron, "settings-nav-chevron")}
           </button>
         `
         )
         .join("");
     },
-    renderSectionHeader(section) {
+    renderSectionHeader(section, { showBack = false } = {}) {
       const copy = translateSectionCopy(section);
+      const drilledIn = showBack || (this.activeHub && section?.id && section.id !== this.activeHub);
+      if (drilledIn) {
+        this.actionMap.set("settings:hubBack", () => {
+          if (this.activeHub) {
+            this.setActiveSection(this.activeHub);
+            this.contentFocusKey = null;
+          }
+        });
+      }
+      const title = drilledIn
+        ? `<button class="settings-back-title settings-content-focusable focusable"
+                   data-zone="content"
+                   ${this.registerAction("settings:hubBack", this.actionMap.get("settings:hubBack"))}
+                   data-role="action">
+              <span class="settings-back-chevron material-icons" aria-hidden="true">arrow_back</span>
+              <span class="settings-title">${escapeHtml(copy.label)}</span>
+            </button>`
+        : `<h1 class="settings-title">${escapeHtml(copy.label)}</h1>`;
       return `
-          <header class="settings-content-header">
-            <h1 class="settings-title">${escapeHtml(copy.label)}</h1>
-            <p class="settings-subtitle">${escapeHtml(copy.subtitle)}</p>
+          <header class="settings-content-header${drilledIn ? " has-back" : ""}">
+            ${title}
           </header>
         `;
     }

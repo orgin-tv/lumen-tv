@@ -436,6 +436,9 @@ async function enterWithLastProfile({ restoreWebOsRoute = false } = {}) {
   // its local cache first and refreshes when the pull completes, so starting
   // the pull after that paint keeps the first screen responsive.
   runAfterFirstHomePaint(() => {
+    void import("./core/profile/liveSyncPoller.js")
+      .then(({ LiveSyncPoller }) => LiveSyncPoller.pollNow({ force: true }))
+      .catch(() => {});
     void StartupSyncService.requestSyncNow({
       notifyPullCompleted: ["home", "plugins"].includes(experienceRoute)
     }).catch((error) => {
@@ -876,6 +879,14 @@ async function bootstrapApp() {
       }
       LocalStore.remove(GUEST_QR_BYPASS_KEY);
       StartupSyncService.start({ runInitialPull: false });
+      void import("./core/profile/liveSyncPoller.js")
+        .then(({ LiveSyncPoller }) => {
+          LiveSyncPoller.start();
+          return LiveSyncPoller.pollNow({ force: true });
+        })
+        .catch((error) => {
+          console.warn("Live sync start failed", error);
+        });
       loginTrace("authenticated subscriber sync scheduled");
       routeAfterAuthentication().catch((error) => {
         console.warn("Failed to resolve authenticated route", error);

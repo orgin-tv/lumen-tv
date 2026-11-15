@@ -134,8 +134,7 @@ import { getLatestAppUpdate } from "../../../core/update/appUpdateService.js";
 import { showAppUpdatePrompt } from "../../components/appUpdatePrompt.js";
 
 import { getScrollMax, getScrollPosition } from "./settingsScreenHelpers-07-normalize-tmdb-language-code.js";
-import { SECTION_META } from "./settingsScreenHelpers-03-clamp-subtitle-text-opacity.js";
-import { arePluginsSupported } from "./settingsScreenHelpers-04-row-icons.js";
+import { getHubById, SECTION_META, SETTINGS_HUBS } from "./settingsScreenHelpers-03-clamp-subtitle-text-opacity.js";
 
 export function updateSettingsScrollIndicators(container) {
   if (!container) {
@@ -283,31 +282,24 @@ export async function fetchAccountSyncOverview() {
   };
 }
 
-export function getVisibleSections(model) {
+export function getVisibleSections(_model) {
+  // Rail shows Nuvio-style hubs only (You / Look / Media / Services / System).
+  return SETTINGS_HUBS.slice();
+}
+
+export function getSettingsSectionById(sectionId) {
+  return getHubById(sectionId) || SECTION_META.find((section) => section.id === sectionId) || null;
+}
+
+export function getVisibleHubEntries(hub, model) {
   const isPrimaryProfileActive = String(model?.activeProfileId || "1") === "1";
-  const isEssential = model?.experience?.mode === "ESSENTIAL";
-  return SECTION_META.filter((section) => {
-    if (section.hideFromNav) {
-      return false;
-    }
-    if (section.id === "plugins" && !arePluginsSupported()) {
-      return false;
-    }
-    // Android keeps Fusion/stream presentation controls inside the advanced
-    // part of Layout, which is not exposed in Essential mode.
-    if (isEssential && section.id === "streams") {
-      return false;
-    }
-    if (section.id === "account" || section.id === "profiles") {
+  return (hub?.entries || []).filter((entry) => {
+    if (entry.sectionId === "account" || entry.sectionId === "profiles") {
       return isPrimaryProfileActive;
     }
-    if (section.id === "watchParty") {
+    if (entry.sectionId === "watchParty") {
       return isWatchPartySectionVisible();
     }
     return true;
   });
-}
-
-export function getSettingsSectionById(sectionId) {
-  return SECTION_META.find((section) => section.id === sectionId) || null;
 }

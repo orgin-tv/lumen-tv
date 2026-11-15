@@ -1,5 +1,6 @@
 /* eslint-disable no-unused-vars */
 import * as internals from "./settingsScreenContext.js";
+import { openLumenSync } from "../../../core/sync/lumenSyncUrl.js";
 
 export function createSettingsScreenMethods05() {
   const {
@@ -8,8 +9,6 @@ export function createSettingsScreenMethods05() {
     ThemeManager,
     ThemeColors,
     MemberAccessRepository,
-    installDesignPackageFromUrl,
-    uninstallDesignPackage,
     availableThemeIds,
     areCustomThemeColorsSolid,
     encodeCustomThemeColors,
@@ -417,89 +416,11 @@ export function createSettingsScreenMethods05() {
         };
       });
 
-      // LUMEN: Designs are addon-like visual packages (tokens + safe CSS only)
+      // Designs are managed on Lumen Sync; TV only shows the active look + device display prefs.
       const themePackages = Array.isArray(model.themePackages) ? model.themePackages : [];
       const selectedPackageId = model.theme.packageId || null;
       const activeDesign = themePackages.find((pkg) => pkg.id === selectedPackageId) || null;
-      const builtinDesigns = themePackages.filter((pkg) => pkg.builtin !== false && !pkg.installed);
-      const installedDesigns = themePackages.filter((pkg) => pkg.installed);
-      const packageCards = [
-        {
-          id: null,
-          label: t("appearance_theme_package_none", {}, "Palette only"),
-          color: model.theme.accentColor || "#E8B45A",
-          onColor: "#111111",
-          description: ""
-        },
-        ...themePackages.map((pkg) => ({
-          id: pkg.id,
-          label: pkg.name,
-          color: pkg.accent || "#E8B45A",
-          onColor: pkg.onAccent || "#111111",
-          description: pkg.description || "",
-          baseThemeName: pkg.baseThemeName
-        }))
-      ];
-      packageCards.forEach((pkg) => {
-        const focusKey = `appearance:package:${pkg.id || "none"}`;
-        this.actionMap.set(focusKey, () => {
-          if (!pkg.id) {
-            ThemeStore.set({ packageId: null });
-          } else {
-            const patch = { packageId: pkg.id };
-            if (pkg.baseThemeName) {
-              patch.themeName = String(pkg.baseThemeName).toUpperCase();
-              patch.accentColor = pkg.color;
-            }
-            ThemeStore.set(patch);
-          }
-          ThemeManager.apply({ enforceAccess: true, access: model?.memberAccess });
-        });
-      });
-
-      this.actionMap.set("appearance:design:install", () => {
-        this.openTextDialog({
-          title: t("appearance_designs_install_title", {}, "Install design"),
-          value: "",
-          placeholder: t("appearance_designs_install_placeholder", {}, "https://…/theme.json or /lumen/themes/…/theme.json"),
-          returnFocusKey: "appearance:design:install",
-          saveLabel: t("appearance_designs_install_action", {}, "Install"),
-          onSubmit: async (value) => {
-            try {
-              const result = await installDesignPackageFromUrl(value);
-              const pkg = result.package;
-              ThemeStore.set({
-                packageId: pkg.id,
-                themeName: String(pkg.baseThemeName || "AMBER").toUpperCase(),
-                accentColor: pkg.cssVariables?.["--secondary-color"] || ThemeStore.get().accentColor
-              });
-              ThemeManager.apply({ enforceAccess: true, access: model?.memberAccess });
-              this.designInstallStatus = t("appearance_designs_install_success", { name: pkg.name }, `Installed ${pkg.name}`);
-              await this.render({ refreshModel: true });
-              return true;
-            } catch (error) {
-              if (this.textDialog) {
-                this.textDialog.statusMessage = String(error?.message || error || "Install failed");
-                this.textDialog.statusKind = "error";
-              }
-              return false;
-            }
-          }
-        });
-      });
-
-      installedDesigns.forEach((pkg) => {
-        this.actionMap.set(`appearance:design:remove:${pkg.id}`, async () => {
-          const result = uninstallDesignPackage(pkg.id);
-          if (!result.ok) {
-            this.designInstallStatus = result.error || "Could not remove design";
-          } else {
-            this.designInstallStatus = t("appearance_designs_removed", { name: pkg.name }, `Removed ${pkg.name}`);
-            ThemeManager.apply({ enforceAccess: true, access: model?.memberAccess });
-          }
-          await this.render({ refreshModel: true });
-        });
-      });
+      this.actionMap.set("appearance:sync-designs", () => openLumenSync("/dashboard/designs"));
 
       this.actionMap.set("appearance:font", () => {
         this.openOptionDialog({
@@ -558,29 +479,18 @@ export function createSettingsScreenMethods05() {
 
       return `
           ${this.renderSectionHeader(SECTION_META.find((item) => item.id === "appearance"))}
-          <div class="settings-group-card settings-appearance-group-card settings-theme-grid-card">
+          <div class="settings-group-card settings-appearance-group-card">
             <div class="settings-group-heading">
               <div class="settings-group-title">${escapeHtml(t("appearance_designs_title", {}, "Designs"))}</div>
               <div class="settings-group-subtitle">${escapeHtml(
                 t(
-                  "appearance_designs_subtitle",
+                  "appearance_designs_sync_subtitle",
                   {},
-                  "Install complete looks like addons. Designs only change visuals — never addons, player, or navigation."
+                  "Install and switch designs in Lumen Sync. This TV keeps only on-device display preferences."
                 )
               )}</div>
             </div>
             <div class="settings-stack">
-              ${this.renderActionRow({
-                focusKey: "appearance:design:install",
-                title: t("appearance_designs_install", {}, "Install design from URL"),
-                subtitle: t(
-                  "appearance_designs_install_hint",
-                  {},
-                  "Paste a theme.json link. Packages are validated and sandboxed before they apply."
-                ),
-                leadingIcon: "add",
-                value: this.designInstallStatus || ""
-              })}
               ${this.renderInformationRow({
                 title: t(
                   "appearance_designs_active",
@@ -588,56 +498,14 @@ export function createSettingsScreenMethods05() {
                   `Active: ${activeDesign?.name || "Palette only"}`
                 )
               })}
+              ${this.renderActionRow({
+                focusKey: "appearance:sync-designs",
+                title: t("appearance_designs_manage_sync", {}, "Manage designs in Lumen Sync"),
+                subtitle: t("appearance_designs_manage_sync_subtitle", {}, "Open Sync to install or change visual packages"),
+                leadingIcon: "open_in_new",
+                external: true
+              })}
             </div>
-            <div class="settings-group-heading" style="margin-top:18px;">
-              <div class="settings-group-title">${escapeHtml(t("appearance_designs_builtin", {}, "Built-in designs"))}</div>
-              <div class="settings-group-subtitle">${escapeHtml(
-                t("appearance_designs_builtin_subtitle", {}, `${builtinDesigns.length} curated packages`)
-              )}</div>
-            </div>
-            <div class="settings-horizontal-scroll-frame">
-              <div class="settings-theme-row">
-                ${packageCards
-                  .map((pkg) =>
-                    this.renderThemeCard(
-                      {
-                        id: "AMBER",
-                        label: pkg.label,
-                        color: pkg.color,
-                        onColor: pkg.onColor,
-                        swatchColor: pkg.color
-                      },
-                      (pkg.id || null) === selectedPackageId,
-                      `appearance:package:${pkg.id || "none"}`
-                    )
-                  )
-                  .join("")}
-              </div>
-              ${settingsScrollIndicatorMarkup("horizontal")}
-            </div>
-            ${
-              installedDesigns.length
-                ? `<div class="settings-group-heading" style="margin-top:18px;">
-              <div class="settings-group-title">${escapeHtml(t("appearance_designs_installed", {}, "Installed designs"))}</div>
-              <div class="settings-group-subtitle">${escapeHtml(
-                t("appearance_designs_installed_subtitle", {}, "Remove a design without touching addons or library data")
-              )}</div>
-            </div>
-            <div class="settings-stack">
-              ${installedDesigns
-                .map((pkg) =>
-                  this.renderActionRow({
-                    focusKey: `appearance:design:remove:${pkg.id}`,
-                    title: pkg.name,
-                    subtitle: pkg.description || pkg.sourceUrl || pkg.id,
-                    value: t("appearance_designs_remove", {}, "Remove"),
-                    leadingIcon: "delete"
-                  })
-                )
-                .join("")}
-            </div>`
-                : ""
-            }
           </div>
           <div class="settings-group-card settings-appearance-group-card settings-theme-grid-card">
             <div class="settings-group-heading">

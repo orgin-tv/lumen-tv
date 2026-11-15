@@ -282,35 +282,241 @@ export const TRAKT_COMMENTS_OPTIONS = [
   { id: "off", labelKey: "trakt_setting_off" }
 ];
 
+// Nuvio-style hubs for the settings rail (5 top-level categories).
+export const SETTINGS_HUBS = [
+  {
+    id: "you",
+    label: "You",
+    labelKey: "settings.hubs.you",
+    subtitle: "",
+    icon: "person",
+    entries: [
+      {
+        sectionId: "account",
+        title: "Account",
+        titleKey: "settings.sections.account.label",
+        subtitle: "Account and sync status",
+        subtitleKey: "settings.sections.account.subtitle",
+        icon: "person"
+      },
+      {
+        sectionId: "profiles",
+        title: "Switch Profile",
+        titleKey: "settings.hubs.you.switchProfile",
+        subtitle: "Change to a different profile.",
+        subtitleKey: "settings.hubs.you.switchProfileSubtitle",
+        icon: "people"
+      },
+      {
+        sectionId: "watchParty",
+        title: "Watch party",
+        titleKey: "party_title",
+        subtitle: "Join friends with a party code",
+        subtitleKey: "party_settings_description",
+        icon: "groups"
+      }
+    ]
+  },
+  {
+    id: "look",
+    label: "Look",
+    labelKey: "settings.hubs.look",
+    subtitle: "",
+    icon: "palette",
+    entries: [
+      {
+        sectionId: "appearance",
+        title: "Appearance",
+        titleKey: "settings.sections.appearance.label",
+        subtitle: "Language, settings style, and accents",
+        subtitleKey: "settings.sections.appearance.subtitle",
+        icon: "palette"
+      },
+      {
+        sectionId: "layout",
+        title: "Layout",
+        titleKey: "settings.sections.layout.label",
+        subtitle: "Home rows, posters, and sidebar style",
+        subtitleKey: "settings.sections.layout.subtitle",
+        icon: "grid_view"
+      },
+      {
+        sectionId: "ambient",
+        title: "Ambient Mode",
+        titleKey: "ambient_mode_title",
+        subtitle: "Screensaver when the TV is idle",
+        subtitleKey: "ambient_mode_subtitle",
+        icon: "nightlife"
+      }
+    ]
+  },
+  {
+    id: "media",
+    label: "Media",
+    labelKey: "settings.hubs.media",
+    subtitle: "",
+    icon: "play_circle",
+    entries: [
+      {
+        sectionId: "contentDiscovery",
+        title: "Content & Discovery",
+        titleKey: "settings.sections.contentDiscovery.label",
+        subtitle: "Search, addons, media servers, and plugins",
+        subtitleKey: "settings.sections.contentDiscovery.subtitle",
+        icon: "explore"
+      },
+      {
+        sectionId: "playback",
+        title: "Playback",
+        titleKey: "settings.sections.playback.label",
+        subtitle: "Player, audio, and subtitle preferences",
+        subtitleKey: "settings.sections.playback.subtitle",
+        icon: "play_circle"
+      },
+      {
+        sectionId: "streams",
+        title: "Stream badges",
+        titleKey: "settings_stream_badges_section",
+        subtitle: "Badge rules and stream list chips",
+        subtitleKey: "settings_stream_badges_description",
+        icon: "style"
+      }
+    ]
+  },
+  {
+    id: "services",
+    label: "Services",
+    labelKey: "settings.hubs.services",
+    subtitle: "",
+    icon: "link",
+    entries: [
+      {
+        sectionId: "trakt",
+        title: "Tracking",
+        titleKey: "settings_tracking_title",
+        subtitle: "Connect Trakt or Simkl on this TV",
+        subtitleKey: "settings_tracking_subtitle",
+        icon: "sync"
+      },
+      {
+        sectionId: "integration",
+        title: "Integrations",
+        titleKey: "settings.sections.integration.label",
+        subtitle: "Debrid, TMDB, MDBList, and AnimeSkip",
+        subtitleKey: "settings.sections.integration.subtitle",
+        icon: "extension"
+      },
+      {
+        sectionId: "syncDesk",
+        title: "Lumen Sync",
+        titleKey: "settings.hubs.services.sync",
+        subtitle: "Manage addons, designs, and devices on Sync",
+        subtitleKey: "settings.hubs.services.syncSubtitle",
+        icon: "space_dashboard",
+        syncPath: "/dashboard"
+      }
+    ]
+  },
+  {
+    id: "system",
+    label: "System",
+    labelKey: "settings.hubs.system",
+    subtitle: "",
+    icon: "settings",
+    entries: [
+      {
+        sectionId: "advanced",
+        title: "Advanced",
+        titleKey: "settings_advanced",
+        subtitle: "Experience mode, network tests, and tuning",
+        subtitleKey: "settings_advanced_subtitle",
+        icon: "tune"
+      },
+      {
+        sectionId: "about",
+        title: "About",
+        titleKey: "settings.sections.about.label",
+        subtitle: "Version, updates, and licenses",
+        subtitleKey: "settings.sections.about.subtitle",
+        icon: "info"
+      }
+    ]
+  }
+];
+
+export const SETTINGS_HUB_IDS = new Set(SETTINGS_HUBS.map((hub) => hub.id));
+
+// Leaf sections (drill-in targets). Not shown on the rail.
 export const SECTION_META = [
   {
     id: "account",
     labelKey: "settings.sections.account.label",
-    subtitleKey: "settings.sections.account.subtitle"
+    label: "Account",
+    subtitleKey: "settings.sections.account.subtitle",
+    subtitle: "Account and sync status",
+    hideFromNav: true
   },
   {
     id: "profiles",
     labelKey: "settings.sections.profiles.label",
-    subtitleKey: "settings.sections.profiles.subtitle"
+    label: "Switch Profile",
+    subtitleKey: "settings.hubs.you.switchProfileSubtitle",
+    subtitle: "Change to a different profile.",
+    hideFromNav: true
   },
-  { id: "watchParty", labelKey: "party_title", subtitleKey: "party_settings_description" },
+  {
+    id: "watchParty",
+    labelKey: "party_title",
+    subtitleKey: "party_settings_description",
+    hideFromNav: true
+  },
+  {
+    id: "playback",
+    labelKey: "settings.sections.playback.label",
+    label: "Playback",
+    subtitleKey: "settings.sections.playback.subtitle",
+    subtitle: "Player, audio, and subtitle preferences",
+    hideFromNav: true
+  },
   {
     id: "appearance",
     labelKey: "settings.sections.appearance.label",
-    subtitleKey: "settings.sections.appearance.subtitle"
+    label: "Appearance",
+    subtitleKey: "settings.sections.appearance.subtitle",
+    subtitle: "Language, settings style, and accents on this TV",
+    hideFromNav: true
   },
-  { id: "ambient", labelKey: "ambient_mode_title", subtitleKey: "ambient_mode_subtitle" },
+  {
+    id: "ambient",
+    labelKey: "ambient_mode_title",
+    subtitleKey: "ambient_mode_subtitle",
+    hideFromNav: true
+  },
+  {
+    id: "trakt",
+    labelKey: "settings_tracking_title",
+    subtitleKey: "settings_tracking_subtitle",
+    hideFromNav: true
+  },
+  {
+    id: "about",
+    labelKey: "settings.sections.about.label",
+    subtitleKey: "settings.sections.about.subtitle",
+    hideFromNav: true
+  },
   {
     id: "layout",
     labelKey: "settings.sections.layout.label",
-    subtitleKey: "settings.sections.layout.subtitle"
+    subtitleKey: "settings.sections.layout.subtitle",
+    hideFromNav: true
   },
   {
     id: "contentDiscovery",
     labelKey: "settings.sections.contentDiscovery.label",
     label: "Content & Discovery",
     subtitleKey: "settings.sections.contentDiscovery.subtitle",
-    subtitle: "Add-ons, plugins, catalogs, and discovery sources"
+    subtitle: "Add-ons, plugins, catalogs, and discovery sources",
+    hideFromNav: true
   },
   {
     id: "plugins",
@@ -321,46 +527,65 @@ export const SECTION_META = [
   {
     id: "integration",
     labelKey: "settings.sections.integration.label",
-    subtitleKey: "settings.sections.integration.subtitle"
+    subtitleKey: "settings.sections.integration.subtitle",
+    hideFromNav: true
   },
   {
     id: "streams",
     labelKey: "settings_stream_badges_section",
-    subtitleKey: "settings_stream_badges_description"
-  },
-  {
-    id: "playback",
-    labelKey: "settings.sections.playback.label",
-    subtitleKey: "settings.sections.playback.subtitle"
-  },
-  {
-    id: "trakt",
-    labelKey: "settings_tracking_title",
-    subtitleKey: "settings_tracking_subtitle"
+    subtitleKey: "settings_stream_badges_description",
+    hideFromNav: true
   },
   {
     id: "advanced",
     labelKey: "settings_advanced",
-    subtitleKey: "settings_advanced_subtitle"
-  },
-  {
-    id: "about",
-    labelKey: "settings.sections.about.label",
-    subtitleKey: "settings.sections.about.subtitle"
+    subtitleKey: "settings_advanced_subtitle",
+    hideFromNav: true
   }
 ];
 
 export const SECTION_ICONS = {
+  you: "person",
+  look: "palette",
+  media: "play_circle",
+  services: "link",
+  system: "settings",
   account: "person",
   profiles: "people",
   watchParty: "groups",
   appearance: "palette",
+  ambient: "nightlife",
+  playback: "play_circle",
   layout: "grid_view",
   contentDiscovery: "explore",
   plugins: "build",
-  integration: "link",
+  integration: "extension",
   streams: "style",
   advanced: "tune",
-  trakt: "trakt",
+  trakt: "sync",
+  syncDesk: "space_dashboard",
   about: "info"
 };
+
+export function getHubById(hubId) {
+  return SETTINGS_HUBS.find((hub) => hub.id === hubId) || null;
+}
+
+export function getHubIdForSection(sectionId) {
+  const match = SETTINGS_HUBS.find((hub) => (hub.entries || []).some((entry) => entry.sectionId === sectionId));
+  return match?.id || null;
+}
+
+export function resolveSettingsHubId(sectionId) {
+  if (!sectionId) {
+    return "you";
+  }
+  if (SETTINGS_HUB_IDS.has(sectionId)) {
+    return sectionId;
+  }
+  return getHubIdForSection(sectionId) || "you";
+}
+
+export function isSettingsHubId(sectionId) {
+  return SETTINGS_HUB_IDS.has(sectionId);
+}

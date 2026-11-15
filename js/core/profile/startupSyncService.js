@@ -5,6 +5,7 @@ import { SessionStore } from "../storage/sessionStore.js";
 import { addonRepository } from "../../data/repository/addonRepository.js";
 import { ProfileManager } from "./profileManager.js";
 import { ProfileSyncService } from "./profileSyncService.js";
+import { LiveSyncPoller } from "./liveSyncPoller.js";
 import { LibrarySyncService } from "./librarySyncService.js";
 import { WatchProgressSyncService } from "./watchProgressSyncService.js";
 import { SavedLibrarySyncService } from "./savedLibrarySyncService.js";
@@ -37,6 +38,7 @@ export {
   addonRepository,
   ProfileManager,
   ProfileSyncService,
+  LiveSyncPoller,
   LibrarySyncService,
   WatchProgressSyncService,
   SavedLibrarySyncService,

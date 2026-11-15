@@ -102,11 +102,14 @@ export function createServerConfiguration({
   const normalizedDiscoveryUrl = isCustom
     ? normalizeDiscoveryBaseUrl(discoveryUrl) || `${normalizedBackendUrl}/.well-known/nuvio`
     : "";
+  // Custom backends are often the Sync bridge (`…/api/bridge`). QR activate
+  // pages live on the Sync web origin, not under /api/bridge.
+  const syncWebOrigin = normalizedBackendUrl.replace(/\/api\/bridge$/i, "");
   const normalizedTvLoginWebBaseUrl = isCustom
-    ? `${normalizedBackendUrl}/tv-login`
+    ? `${syncWebOrigin}/tv-login`
     : normalizeUrl(tvLoginWebBaseUrl);
   const normalizedDeviceLoginWebBaseUrl = isCustom
-    ? `${normalizedBackendUrl}/link`
+    ? `${syncWebOrigin}/link`
     : normalizeUrl(deviceLoginWebBaseUrl || tvLoginWebBaseUrl);
 
   return Object.freeze({

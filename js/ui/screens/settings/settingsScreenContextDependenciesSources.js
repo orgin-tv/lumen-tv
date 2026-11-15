@@ -97,6 +97,7 @@ export { DEBRID_AUTH_METHODS, DebridProviders } from "../../../core/debrid/debri
 export { DEBRID_DEVICE_AUTH_STATUS, DebridDeviceAuthService } from "../../../core/debrid/debridDeviceAuthService.js";
 
 export { ProfileManager } from "../../../core/profile/profileManager.js";
+export { StartupSyncService } from "../../../core/profile/startupSyncService.js";
 
 export { AuthManager } from "../../../core/auth/authManager.js";
 
@@ -215,7 +216,13 @@ export {
   TRAKT_LIBRARY_SOURCE_OPTIONS,
   TRAKT_COMMENTS_OPTIONS,
   SECTION_META,
-  SECTION_ICONS
+  SECTION_ICONS,
+  SETTINGS_HUBS,
+  SETTINGS_HUB_IDS,
+  getHubById,
+  getHubIdForSection,
+  resolveSettingsHubId,
+  isSettingsHubId
 } from "./settingsScreenHelpers-03-clamp-subtitle-text-opacity.js";
 
 export {
@@ -295,7 +302,8 @@ export {
   getSessionEmail,
   fetchAccountSyncOverview,
   getVisibleSections,
-  getSettingsSectionById
+  getSettingsSectionById,
+  getVisibleHubEntries
 } from "./settingsScreenHelpers-08-update-settings-scroll-indicators.js";
 
 export {

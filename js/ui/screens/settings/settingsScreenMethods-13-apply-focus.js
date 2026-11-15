@@ -140,7 +140,8 @@ export function createSettingsScreenMethods13() {
     moveNavFocus(index) {
       this.navIndex = clamp(index, 0, this.visibleSections.length - 1);
       const section = this.visibleSections[this.navIndex];
-      if (section && this.activeSection !== section.id) {
+      const selectedHubId = this.activeHub || section?.id;
+      if (section && selectedHubId !== section.id) {
         void this.activateNavSelection().catch((error) => console.warn("Settings section could not open", error));
       } else this.applyFocus();
     },
@@ -149,13 +150,15 @@ export function createSettingsScreenMethods13() {
       if (!section) {
         return;
       }
+      // Rail always opens the hub overview (clears leaf drill-in).
       this.setActiveSection(section.id);
       this.integrationView = "hub";
-      this.contentFocusKey = section.id === "appearance" ? this.getAppearanceThemeFocusKey() : null;
+      this.contentFocusKey = null;
       await this.render({ refreshModel: false });
     },
     syncNavFocusToActive() {
-      const activeIndex = this.visibleSections.findIndex((item) => item.id === this.activeSection);
+      const hubId = this.activeHub || this.activeSection;
+      const activeIndex = this.visibleSections.findIndex((item) => item.id === hubId);
       if (activeIndex >= 0) {
         this.navIndex = activeIndex;
       }

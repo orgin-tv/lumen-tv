@@ -8,6 +8,7 @@ export const ENV_PROPERTY_KEYS = [
   "NUVIO_SUPABASE_FALLBACK_URL",
   "TV_LOGIN_WEB_BASE_URL",
   "DEVICE_LOGIN_WEB_BASE_URL",
+  "LUMEN_SYNC_URL",
   "YOUTUBE_PROXY_URL",
   "INTRODB_API_URL",
   "IMDB_RATINGS_API_BASE_URL",
@@ -32,6 +33,7 @@ const DEFAULT_ENV_VALUES = {
   NUVIO_SUPABASE_FALLBACK_URL: "",
   TV_LOGIN_WEB_BASE_URL: "http://127.0.0.1:3847/tv-login",
   DEVICE_LOGIN_WEB_BASE_URL: "http://127.0.0.1:3847/link",
+  LUMEN_SYNC_URL: "http://127.0.0.1:3847",
   YOUTUBE_PROXY_URL: "youtube-proxy.html",
   INTRODB_API_URL: "https://api.introdb.app/",
   IMDB_RATINGS_API_BASE_URL: "",
@@ -49,6 +51,17 @@ const DEFAULT_ENV_VALUES = {
   SIMKL_APP_NAME: "nuvio",
   PREMIUMIZE_CLIENT_ID: ""
 };
+
+/** Blank values for these keys fall back to Lumen Sync local defaults. */
+const FALLBACK_WHEN_BLANK = new Set([
+  "NUVIO_SUPABASE_URL",
+  "NUVIO_SUPABASE_ANON_KEY",
+  "TV_LOGIN_WEB_BASE_URL",
+  "DEVICE_LOGIN_WEB_BASE_URL",
+  "LUMEN_SYNC_URL",
+  "INTRODB_API_URL",
+  "SPONSOR_NAMES"
+]);
 
 async function pathExists(filePath) {
   try {
@@ -98,8 +111,7 @@ export function normalizeEnvProperties(properties = {}) {
       ? properties[key]
       : DEFAULT_ENV_VALUES[key];
     const normalizedValue = String(rawValue ?? "");
-    const shouldUseDefault =
-      (key === "INTRODB_API_URL" || key === "SPONSOR_NAMES") && !normalizedValue.trim();
+    const shouldUseDefault = FALLBACK_WHEN_BLANK.has(key) && !normalizedValue.trim();
     env[key] = shouldUseDefault ? DEFAULT_ENV_VALUES[key] : normalizedValue;
   });
   return env;

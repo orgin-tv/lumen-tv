@@ -2,6 +2,7 @@ import { LocalStore } from "../../core/storage/localStore.js";
 import { ProfileManager } from "../../core/profile/profileManager.js";
 
 const KEY = "searchHistory";
+const ENABLED_KEY = "searchHistoryEnabled";
 export const SEARCH_HISTORY_MAX_ITEMS = 8;
 
 function normalizeProfileId(profileId = null) {
@@ -51,11 +52,26 @@ function writeForProfile(profileId, queries) {
 }
 
 export const SearchHistoryStore = {
+  isEnabled() {
+    return LocalStore.get(ENABLED_KEY, true) !== false;
+  },
+
+  setEnabled(enabled) {
+    LocalStore.set(ENABLED_KEY, Boolean(enabled));
+    return this.isEnabled();
+  },
+
   list(profileId = null) {
+    if (!this.isEnabled()) {
+      return [];
+    }
     return listForProfile(profileId);
   },
 
   save(query, profileId = null, maxItems = SEARCH_HISTORY_MAX_ITEMS) {
+    if (!this.isEnabled()) {
+      return listForProfile(profileId);
+    }
     const normalized = normalizeQuery(query);
     if (!normalized) {
       return listForProfile(profileId);

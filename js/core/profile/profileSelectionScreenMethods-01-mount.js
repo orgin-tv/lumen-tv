@@ -6,6 +6,7 @@ export function createProfileSelectionScreenMethods01() {
     MAX_PROFILES,
     ProfileManager,
     ProfileSyncService,
+    StartupSyncService,
     AvatarRepository,
     MemberAccessRepository,
     ProfileBackgroundRepository,
@@ -83,13 +84,27 @@ export function createProfileSelectionScreenMethods01() {
       // same initial profile/lock refresh that previously blocked the screen.
       this.initialProfileSync = skipInitialProfileSync
         ? Promise.resolve()
-        : Promise.all([ProfileSyncService.pull(), ProfileSyncService.pullProfileLockStates()]).then(async ([, pinStates]) => {
+        : Promise.all([ProfileSyncService.pull(true), ProfileSyncService.pullProfileLockStates()]).then(async ([, pinStates]) => {
             const profiles = await ProfileManager.getProfiles();
             if (!this.isMounted || this.mountToken !== mountToken) return;
             this.profiles = profiles;
             this.profilePinEnabled = pinStates;
             this.render();
           });
+      const refreshProfilesFromLocal = async () => {
+        if (!this.isMounted || this.mountToken !== mountToken) return;
+        this.profiles = await ProfileManager.getProfiles();
+        if (!this.isMounted || this.mountToken !== mountToken) return;
+        this.render();
+      };
+      this.profileChangeUnsubscribe = ProfileManager.subscribe?.(() => {
+        void refreshProfilesFromLocal();
+      });
+      this.liveSyncUnsubscribe = StartupSyncService.subscribeToPullCompleted?.((event) => {
+        if (event?.source === "live-sync" || event?.profilesChanged) {
+          void refreshProfilesFromLocal();
+        }
+      });
       this.memberAccessUnsubscribe = MemberAccessRepository.subscribe((access) => {
         this.memberAccess = access;
         if (!this.isMounted || !this.profiles) {

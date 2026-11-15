@@ -141,6 +141,14 @@ export function createSettingsScreenMethods14() {
           await this.render({ refreshModel: false });
           return;
         }
+        if (this.activeHub && this.activeSection && this.activeSection !== this.activeHub) {
+          this.setActiveSection(this.activeHub);
+          this.focusZone = "content";
+          this.contentFocusKey = null;
+          await this.render({ refreshModel: false });
+          this.applyFocus();
+          return;
+        }
         if (this.focusZone === "sidebar") {
           Platform.exitApp();
         } else {
@@ -339,6 +347,13 @@ export function createSettingsScreenMethods14() {
       if (this.activeSection === "contentDiscovery" && this.mediaServersView) {
         this.actionMap.get("mediaServers:back")?.();
         void this.render({ refreshModel: false });
+        return true;
+      }
+      if (this.activeHub && this.activeSection && this.activeSection !== this.activeHub) {
+        this.setActiveSection(this.activeHub);
+        this.focusZone = "content";
+        this.contentFocusKey = null;
+        void this.render({ refreshModel: false }).then(() => this.applyFocus());
         return true;
       }
       if (this.focusZone === "sidebar") {

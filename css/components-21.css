@@ -34,10 +34,48 @@
 }
 
 .settings-group-card {
-  border-radius: 36px;
-  border: 1px solid var(--border-color);
-  background: var(--card-bg);
-  padding: 28px;
+  border-radius: 28px;
+  border: none;
+  background: rgba(255, 255, 255, 0.06);
+  padding: 12px 18px;
+}
+
+.settings-section-block {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.settings-back-title {
+  display: inline-flex;
+  align-items: center;
+  gap: 16px;
+  padding: 0;
+  margin: 0;
+  border: none;
+  background: transparent;
+  color: #fff;
+  text-align: left;
+  cursor: pointer;
+}
+
+.settings-back-title.focused {
+  outline: none;
+}
+
+.settings-back-title.focused .settings-title,
+.settings-back-title.focused .settings-back-chevron {
+  color: var(--focus-color, #c62828);
+}
+
+.settings-back-chevron {
+  font-size: 40px;
+  line-height: 1;
+  color: #fff;
+}
+
+.settings-content-header.has-back .settings-title {
+  font-size: clamp(36px, 2.4vw, 48px);
 }
 
 .settings-group-card-fill {
@@ -80,12 +118,12 @@
 }
 
 .settings-section-label {
-  color: var(--text-secondary);
-  font-size: 22px;
+  color: rgba(255, 255, 255, 0.45);
+  font-size: 20px;
   font-weight: 700;
-  letter-spacing: 0.08em;
+  letter-spacing: 0.14em;
   line-height: 1.2;
-  padding: 4px 8px 0;
+  padding: 4px 10px 0;
   text-transform: uppercase;
 }
 
@@ -93,11 +131,109 @@
   padding: 28px;
 }
 
+.settings-hub-card {
+  padding: 8px 12px;
+}
+
+.settings-hub-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+.settings-hub-list .settings-action-row {
+  min-height: 112px;
+  border-radius: 20px;
+  padding: 18px 16px;
+  background: transparent;
+  border: none;
+}
+
+.settings-hub-list .settings-action-row + .settings-action-row {
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 0;
+}
+
+.settings-hub-list .settings-action-row:first-child {
+  border-radius: 20px 20px 0 0;
+}
+
+.settings-hub-list .settings-action-row:last-child {
+  border-radius: 0 0 20px 20px;
+}
+
+.settings-hub-list .settings-action-row:only-child {
+  border-radius: 20px;
+}
+
+.settings-hub-list .settings-action-row.focused {
+  background: rgba(255, 255, 255, 0.08);
+  box-shadow: inset 0 0 0 2px var(--focus-color, #c62828);
+}
+
+.settings-hub-list .settings-row-leading-icon {
+  width: 56px;
+  height: 56px;
+  border-radius: 14px;
+  background: var(--focus-color, var(--accent-color, #c62828));
+  color: #fff;
+  font-size: 30px;
+}
+
+.settings-hub-list .settings-row-icon {
+  opacity: 0.35;
+}
+
+.settings-hub-empty {
+  margin: 24px 8px;
+  color: var(--text-secondary);
+  font-size: 26px;
+}
+
+.settings-hub-footer {
+  margin-top: auto;
+  padding: 28px 12px 8px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  text-align: center;
+  pointer-events: none;
+}
+
+.settings-hub-footer-wordmark {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.settings-hub-footer-logo {
+  height: 48px;
+  width: auto;
+  opacity: 0.9;
+}
+
+.settings-hub-footer-copy {
+  margin: 0;
+  color: var(--text-secondary);
+  font-size: 22px;
+  line-height: 1.3;
+}
+
 .settings-account-list {
   display: flex;
   flex-direction: column;
   gap: 12px;
   padding-bottom: 16px;
+}
+
+.settings-account-sync-links {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 8px;
+  padding-top: 16px;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
 }
 
 .settings-account-loading,
@@ -459,5 +595,9 @@
 
 .settings-toggle-pill.is-checked {
   justify-content: flex-end;
-  background: rgba(var(--secondary-color-rgb-legacy), 0.35);
+  background: var(--focus-color, #c62828);
+}
+
+.settings-toggle-pill.is-checked .settings-toggle-thumb {
+  background: #fff;
 }

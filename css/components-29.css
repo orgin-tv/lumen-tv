@@ -383,7 +383,8 @@
 }
 
 .settings-shell[data-settings-style="classic"] .settings-group-card {
-  border: 1px solid rgba(255, 255, 255, 0.14);
+  border: none;
+  background: rgba(255, 255, 255, 0.06);
 }
 
 .settings-shell[data-settings-style="zen"] .settings-group-card {
@@ -400,6 +401,16 @@
   grid-template-columns: minmax(0, 1fr);
   grid-template-rows: 116px minmax(0, 1fr);
   gap: 20px;
+}
+
+.settings-shell[data-settings-style="horizon"] .settings-rail {
+  flex-direction: row;
+  align-items: center;
+  gap: 16px;
+}
+
+.settings-shell[data-settings-style="horizon"] .settings-rail-title {
+  display: none;
 }
 
 .settings-shell[data-settings-style="horizon"] .settings-sidebar {

@@ -7,6 +7,8 @@ export function createStartupSyncServiceMethods01() {
     LocalStore,
     addonRepository,
     ProfileManager,
+    ProfileSyncService,
+    LiveSyncPoller,
     PluginSyncService,
     getSyncBackoffRemainingMs,
     resetSyncBackoff,
@@ -95,6 +97,7 @@ export function createStartupSyncServiceMethods01() {
         if (profileScopedSyncEnabled) {
           this.profileScopedSyncEnabled = true;
         }
+        LiveSyncPoller.start();
         return;
       }
       this.started = true;
@@ -113,6 +116,7 @@ export function createStartupSyncServiceMethods01() {
       if (!this.started) {
         return;
       }
+      LiveSyncPoller.start();
       this.intervalId = setInterval(() => {
         this.scheduleSurfacePull("periodic");
       }, PERIODIC_SURFACE_PULL_INTERVAL_MS);
@@ -130,6 +134,7 @@ export function createStartupSyncServiceMethods01() {
       this.started = false;
       this.runGeneration += 1;
       this.profileScopedSyncEnabled = false;
+      LiveSyncPoller.stop();
       this.pendingSyncRequest = null;
       this.lastPulledKey = null;
       this.lastPulledIncludedProfileSettings = false;
@@ -172,6 +177,9 @@ export function createStartupSyncServiceMethods01() {
     },
     enableProfileScopedSync() {
       this.profileScopedSyncEnabled = true;
+      if (this.started) {
+        LiveSyncPoller.start();
+      }
     },
     ensurePluginServiceReady({ force = true } = {}) {
       return PluginSyncService.ensureReadyForPull({ force });
@@ -213,13 +221,19 @@ export function createStartupSyncServiceMethods01() {
             return;
           }
           let foregroundPullPromise = null;
-          foregroundPullPromise = Promise.all([this.requestWatchStateSyncNow(), this.requestLibrarySyncNow()])
-            .then(([watchSucceeded, librarySucceeded]) => {
-              if (watchSucceeded && librarySucceeded) {
+          foregroundPullPromise = Promise.all([
+            ProfileSyncService.pull(true)
+              .then(() => true)
+              .catch(() => false),
+            this.requestWatchStateSyncNow(),
+            this.requestLibrarySyncNow()
+          ])
+            .then(([profilesSucceeded, watchSucceeded, librarySucceeded]) => {
+              if (profilesSucceeded && watchSucceeded && librarySucceeded) {
                 this.lastForegroundPullKey = key;
                 this.lastForegroundPullAtMs = Date.now();
               }
-              return Boolean(watchSucceeded && librarySucceeded);
+              return Boolean(profilesSucceeded && watchSucceeded && librarySucceeded);
             })
             .catch((error) => {
               console.warn(`Startup sync ${reason} surface pull failed`, error);

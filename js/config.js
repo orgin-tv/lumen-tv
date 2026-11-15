@@ -1,14 +1,22 @@
 const runtimeEnv = globalThis.__NUVIO_ENV__ || {};
 
-export const SUPABASE_URL = String(runtimeEnv.NUVIO_SUPABASE_URL || "").trim();
-export const SUPABASE_ANON_KEY = String(runtimeEnv.NUVIO_SUPABASE_ANON_KEY || "").trim();
-export const SUPABASE_FALLBACK_URL = String(runtimeEnv.NUVIO_SUPABASE_FALLBACK_URL || "").trim();
-export const TV_LOGIN_WEB_BASE_URL = String(
-  runtimeEnv.TV_LOGIN_WEB_BASE_URL || "http://127.0.0.1:3847/tv-login"
-).trim();
-export const DEVICE_LOGIN_WEB_BASE_URL = String(
-  runtimeEnv.DEVICE_LOGIN_WEB_BASE_URL || "http://127.0.0.1:3847/link"
-).trim();
+function envString(key, fallback = "") {
+  const value = String(runtimeEnv[key] ?? "").trim();
+  return value || fallback;
+}
+
+export const SUPABASE_URL = envString("NUVIO_SUPABASE_URL", "http://127.0.0.1:3847/api/bridge");
+export const SUPABASE_ANON_KEY = envString("NUVIO_SUPABASE_ANON_KEY", "lumen-local-anon");
+export const SUPABASE_FALLBACK_URL = envString("NUVIO_SUPABASE_FALLBACK_URL", "");
+export const TV_LOGIN_WEB_BASE_URL = envString(
+  "TV_LOGIN_WEB_BASE_URL",
+  "http://127.0.0.1:3847/tv-login"
+);
+export const DEVICE_LOGIN_WEB_BASE_URL = envString(
+  "DEVICE_LOGIN_WEB_BASE_URL",
+  "http://127.0.0.1:3847/link"
+);
+export const LUMEN_SYNC_URL = envString("LUMEN_SYNC_URL", "http://127.0.0.1:3847");
 export const YOUTUBE_PROXY_URL = String(
   runtimeEnv.YOUTUBE_PROXY_URL || "youtube-proxy.html"
 ).trim();

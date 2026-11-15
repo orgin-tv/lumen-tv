@@ -1,5 +1,6 @@
 import { renderAmbientSection } from "./settingsAmbientSection.js";
 import { renderWatchPartySection } from "./settingsWatchPartySection.js";
+import { openLumenSync } from "../../../core/sync/lumenSyncUrl.js";
 /* eslint-disable no-unused-vars */
 import * as internals from "./settingsScreenContext.js";
 
@@ -16,6 +17,10 @@ export function createSettingsScreenMethods12() {
     SETTINGS_VERSION_LABEL,
     PRIVACY_URL,
     SECTION_META,
+    getHubById,
+    getVisibleHubEntries,
+    isSettingsHubId,
+    resolveSettingsHubId,
     clamp,
     t,
     escapeHtml,
@@ -121,10 +126,6 @@ export function createSettingsScreenMethods12() {
       });
       this.actionMap.set("about:supporters", () => Router.navigate("supportersContributors"));
       this.actionMap.set("about:licenses", () => Router.navigate("licensesAttributions"));
-      this.actionMap.set("about:dashboard", () => {
-        const opened = window.open?.("dashboard.html", "_blank", "noopener");
-        if (!opened) window.location.assign("dashboard.html");
-      });
       this.actionMap.set("about:checkUpdates", async () => {
         this.aboutUpdateStatus = t("update_checking", {}, "Checking for updates…");
         await this.render({ refreshModel: false });
@@ -159,12 +160,6 @@ export function createSettingsScreenMethods12() {
             </div>
             <div class="settings-stack">
               ${this.renderActionRow({
-                focusKey: "about:dashboard",
-                title: t("about_open_dashboard", {}, "Open dashboard"),
-                subtitle: t("about_open_dashboard_subtitle", {}, "Profiles, designs, addons, and updates on a larger screen"),
-                external: true
-              })}
-              ${this.renderActionRow({
                 focusKey: "about:checkUpdates",
                 title: t("about_check_updates", {}, "Check for updates"),
                 subtitle:
@@ -196,7 +191,54 @@ export function createSettingsScreenMethods12() {
           </div>
         `;
     },
+    renderHubOverview(hub, model) {
+      const entries = getVisibleHubEntries(hub, model);
+      entries.forEach((entry) => {
+        const focusKey = `hub:${hub.id}:${entry.sectionId}`;
+        this.actionMap.set(focusKey, () => {
+          if (entry.sectionId === "syncDesk") {
+            openLumenSync(entry.syncPath || "/dashboard");
+            return;
+          }
+          this.contentFocusKey = null;
+          this.setActiveSection(entry.sectionId);
+        });
+      });
+
+      const rows = entries
+        .map((entry) => {
+          const title = entry.titleKey ? t(entry.titleKey, {}, entry.title || "") : String(entry.title || "");
+          const subtitle = entry.subtitleKey ? t(entry.subtitleKey, {}, entry.subtitle || "") : String(entry.subtitle || "");
+          return this.renderActionRow({
+            focusKey: `hub:${hub.id}:${entry.sectionId}`,
+            title,
+            subtitle,
+            leadingIcon: entry.icon || "chevron_right",
+            external: entry.sectionId === "syncDesk"
+          });
+        })
+        .join("");
+
+      return `
+          ${this.renderSectionHeader(hub)}
+          <div class="settings-group-card settings-hub-card">
+            <div class="settings-hub-list">
+              ${rows || `<p class="settings-hub-empty">${escapeHtml(t("settings.hubs.empty", {}, "No settings in this category."))}</p>`}
+            </div>
+          </div>
+          <div class="settings-hub-footer" aria-hidden="true">
+            ${renderMemberBrandWordmark({
+              access: model?.memberAccess,
+              imageClass: "settings-hub-footer-logo",
+              wrapperClass: "settings-hub-footer-wordmark"
+            })}
+            <p class="settings-hub-footer-copy">${escapeHtml(t("settings.about.madeWithLove"))}</p>
+            <p class="settings-hub-footer-copy">${escapeHtml(t("settings.about.version", { version: SETTINGS_VERSION_LABEL }))}</p>
+          </div>
+        `;
+    },
     renderSection(section, model) {
+      if (isSettingsHubId(section.id)) return this.renderHubOverview(section, model);
       if (section.id === "account") return this.renderAccountSection(model);
       if (section.id === "profiles") return this.renderProfilesSection(model);
       if (section.id === "watchParty") return renderWatchPartySection.call(this);
@@ -221,21 +263,30 @@ export function createSettingsScreenMethods12() {
       this.visibleSections = getVisibleSections(this.model);
       this.actionMap = new Map();
       if (!this.visibleSections.length) {
-        this.visibleSections = [SECTION_META.find((item) => item.id === "appearance") || SECTION_META[0]];
+        this.visibleSections = [getHubById("you")].filter(Boolean);
       }
-      if (!this.visibleSections.some((section) => section.id === this.activeSection)) {
-        this.setActiveSection(this.visibleSections[0]?.id || "appearance");
+      this.activeHub = resolveSettingsHubId(this.activeHub || this.activeSection);
+      const hubVisible = this.visibleSections.some((section) => section.id === this.activeHub);
+      if (!hubVisible) {
+        this.setActiveSection(this.visibleSections[0]?.id || "you");
+      } else if (!this.activeSection) {
+        this.setActiveSection(this.activeHub);
+      } else {
+        this.activeHub = resolveSettingsHubId(this.activeSection);
       }
       this.navIndex = clamp(
-        Number.isFinite(this.navIndex) ? this.navIndex : this.visibleSections.findIndex((item) => item.id === this.activeSection),
+        Number.isFinite(this.navIndex) ? this.navIndex : this.visibleSections.findIndex((item) => item.id === this.activeHub),
         0,
         this.visibleSections.length - 1
       );
       const section =
         getSettingsSectionById(this.activeSection) ||
-        this.visibleSections.find((item) => item.id === this.activeSection) ||
+        getHubById(this.activeSection) ||
+        this.visibleSections.find((item) => item.id === this.activeHub) ||
         this.visibleSections[0];
-      this.ensureExpandedState(section.id);
+      if (!isSettingsHubId(section.id)) {
+        this.ensureExpandedState(section.id);
+      }
       this.persistUiState();
 
       this.ensureShell();

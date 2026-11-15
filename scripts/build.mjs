@@ -711,26 +711,6 @@ async function buildBundle() {
   console.log("bundle build complete");
 }
 
-async function buildDashboard() {
-  console.log("starting dashboard bundle...");
-  await build({
-    entryPoints: [path.join(rootDir, "js/dashboard/dashboard.js")],
-    outfile: path.join(distDir, "dashboard.js"),
-    bundle: true,
-    minify: !debugBundle,
-    format: "esm",
-    sourcemap: debugBundle,
-    target: [`chrome${compatibilityPolicy.chromiumVersion}`],
-    define: {
-      "process.env.NODE_ENV": '"production"'
-    }
-  });
-  await Promise.all([
-    cp(path.join(rootDir, "dashboard.html"), path.join(distDir, "dashboard.html")),
-    cp(path.join(rootDir, "dashboard.css"), path.join(distDir, "dashboard.css"))
-  ]);
-  console.log("dashboard bundle complete");
-}
 async function runBuild() {
   try {
     console.log("cleaning dist directory...");
@@ -793,23 +773,28 @@ async function runBuild() {
 
     // js bundle processing (final step to ensure all transformations are applied correctly and we end up with a single, minified bundle file)
     await buildBundle();
-    await buildDashboard();
 
     const sourceIndex = await readFile(path.join(rootDir, "index.html"), "utf8");
+    // Bust browser caches of app.bundle.js after each build (TV Settings slim,
+    // QR env, etc. otherwise stay invisible behind a sticky ?v= query).
+    const { version: appVersion } = await readAppMetadata();
+    const bundleCacheBust = `${appVersion}-${Date.now().toString(36)}`;
     // The build ships a single concatenated stylesheet. Rewrite any legacy
     // per-file css/<name>.css references to the bundled output so dist
     // always points at the one file, even if the source still lists several.
     let injectedBundledCss = false;
-    const bundledIndex = sourceIndex.replace(
-      /[ \t]*<link\s+rel="stylesheet"\s+href="css\/[^"]*"(?:\s*\/?)>[ \t]*\r?\n?/gi,
-      () => {
-        if (!injectedBundledCss) {
-          injectedBundledCss = true;
-          return `    <link rel="stylesheet" href="css/${BUNDLED_CSS_FILE}" />\n`;
+    const bundledIndex = sourceIndex
+      .replace(
+        /[ \t]*<link\s+rel="stylesheet"\s+href="css\/[^"]*"(?:\s*\/?)>[ \t]*\r?\n?/gi,
+        () => {
+          if (!injectedBundledCss) {
+            injectedBundledCss = true;
+            return `    <link rel="stylesheet" href="css/${BUNDLED_CSS_FILE}" />\n`;
+          }
+          return "";
         }
-        return "";
-      }
-    );
+      )
+      .replace(/app\.bundle\.js\?v=[^"'\s>]+/g, `app.bundle.js?v=${bundleCacheBust}`);
     await writeFile(path.join(distDir, "index.html"), bundledIndex);
 
     console.log("configuring runtime env from local.properties...");

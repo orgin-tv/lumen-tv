@@ -5,65 +5,114 @@
 </p>
 
 <p align="center">
-  Bring your sources together in one TV library — with installable, safe theme packages.
+  Bring your sources together in one TV library — with Sync for the desk,<br />
+  and installable, safe design packages on the glass.
 </p>
 
-**Lumen** is an open-source fork of [Nuvio TV Smart](https://github.com/NuvioMedia/NuvioTVSmart) (GPLv3). Upstream credit belongs to the NuvioMedia contributors who built the player, addon, and TV shell that Lumen extends.
+**Lumen TV** is an open-source fork of [Nuvio TV Smart](https://github.com/NuvioMedia/NuvioTVSmart) (GPLv3). Upstream credit belongs to the NuvioMedia contributors who built the player, addon, and TV shell that Lumen extends.
 
-## What Lumen adds
+Companion desk: **[lumen-tvs/lumen-sync](https://github.com/lumen-tvs/lumen-sync)** — profiles, addons, devices, and updates in the browser.
 
-- Rebranded TV app identity (`space.lumen.webos`, Lumen wordmark)
-- **Designs** — addon-like installable looks (JSON tokens + sandboxed CSS)
-- Settings → Appearance → Install design from URL, apply, remove
-- Soft fallback to Lumen Default; designs never touch addons, player, or navigation
+---
 
-Install a design the same way you’d add a catalog source: paste a `theme.json` URL. Packages are validated and sanitized before they apply.
+## What it is
 
-## Platforms
+| | |
+| --- | --- |
+| **Platforms** | Samsung **Tizen 4+**, LG **webOS 5+** |
+| **Role** | Watch, browse, play — device-focused Settings |
+| **Pairs with** | [Lumen Sync](https://github.com/lumen-tvs/lumen-sync) over a local or hosted bridge |
 
-Same as upstream Nuvio TV Smart: **Samsung Tizen 4+** and **LG webOS 5+**.
+### Lumen adds (on top of Nuvio)
 
-## Develop locally
+- Rebranded identity (`space.lumen.webos`, Lumen wordmark)
+- **Designs** — installable looks (JSON tokens + sandboxed CSS)
+- Slimmer Settings (five hubs); heavy management lives on Sync
+- **Live sync** — signed-in TVs poll Sync every few seconds so desk profile changes appear without restart
 
-Requires Node.js and npm.
+---
+
+## Quick start (browser smoke test)
+
+Requires Node.js 20+ and npm.
 
 ```bash
-git clone <your-lumen-repo-url> lumen-tv-smart
-cd lumen-tv-smart
+git clone https://github.com/lumen-tvs/lumen-tv.git
+cd lumen-tv
+cp local.example.properties local.properties
 npm install
 npm run build
-npm run serve
+PORT=4317 npm run serve
 ```
 
-Open the printed local URL in a browser for a desktop smoke check. Theme packages load from `lumen/themes/`.
+Open [http://127.0.0.1:4317](http://127.0.0.1:4317).
 
-### Lumen Sync (website)
+Point the TV at Sync (defaults in `local.example.properties`):
 
-Companion desk: **[lumen-tvs/lumen-sync](https://github.com/lumen-tvs/lumen-sync)** (separate repo under [lumen-tvs](https://github.com/lumen-tvs)).
-
-```bash
-git clone https://github.com/lumen-tvs/lumen-sync.git
-cd lumen-sync
-npm install
-env -u DATABASE_URL npm run dev
+```properties
+NUVIO_SUPABASE_URL=http://127.0.0.1:3847/api/bridge
+NUVIO_SUPABASE_ANON_KEY=lumen-local-anon
+TV_LOGIN_WEB_BASE_URL=http://127.0.0.1:3847/tv-login
+DEVICE_LOGIN_WEB_BASE_URL=http://127.0.0.1:3847/link
+LUMEN_SYNC_URL=http://127.0.0.1:3847
 ```
 
-Open `http://127.0.0.1:3847`. QR login points at Sync `/link` by default.
+Run [Lumen Sync](https://github.com/lumen-tvs/lumen-sync) on port **3847**, then sign in on the TV with the **same account**.
 
+---
+
+## Pair with Sync
+
+```text
+Lumen TV  (:4317)  ◄── QR / email + /api/bridge ──►  Lumen Sync  (:3847)
+                         live get_sync_overview
+```
+
+1. Start Sync, then this TV serve.
+2. On the TV, complete QR or email sign-in.
+3. Create a profile on the Sync dashboard → it should show on the TV within a few seconds (Settings → You → Profiles, or **Refresh from Sync**).
+
+---
+
+## Scripts
+
+| Script | Purpose |
+| ------ | ------- |
+| `npm run build` | Bundle into `dist/` (includes `lumen/` overlay) |
+| `npm run serve` | Serve the build (set `PORT`, e.g. `4317`) |
+| `npm run test:themes` | Design package validator / sanitizer tests |
+| `npm run package:tizen` | Unsigned Tizen WGT |
+| `npm run package:webos` | webOS IPK |
+
+---
 
 ## Designs
 
-- Authoring / install guide: [`docs/lumen/creating-themes.md`](docs/lumen/creating-themes.md)
-- Built-ins: `lumen.default`, `lumen.cinema`
-- Sample installable (not in catalog): `/lumen/themes/community.aurora/theme.json`
+Install a design like a catalog source: paste a `theme.json` URL. Packages are validated and sanitized before they apply.
 
-## Upstream sync
+- Guide: [`docs/lumen/creating-themes.md`](docs/lumen/creating-themes.md)
+- Built-ins: `lumen.default`, `lumen.cinema`
+
+---
+
+## Repo layout
+
+```text
+├── js/              App source
+├── lumen/           Overlays & built-in designs
+├── assets/brand/    Wordmark & mark
+├── docs/            Themes, upstream sync notes
+├── scripts/         Build, serve, packaging
+└── local.example.properties
+```
+
+---
+
+## Upstream
 
 - Guide: [`docs/lumen/upstream-sync.md`](docs/lumen/upstream-sync.md)
-- Remote: `upstream` → `https://github.com/NuvioMedia/NuvioTVSmart.git`
-- Prefer `lumen/` and `js/ui/theme/packages/` over large upstream rewrites
+- Prefer changes under `lumen/` and `js/ui/theme/packages/` over large upstream rewrites
 
 ## License
 
-GNU General Public License v3.0 — see [`LICENSE`](LICENSE).
-This project includes and modifies NuvioTVSmart under the same license.
+GPLv3 — see [`LICENSE`](LICENSE).
