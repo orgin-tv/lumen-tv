@@ -226,19 +226,26 @@ export async function fetchAccountSyncOverview() {
   const source = response && typeof response === "object" && !Array.isArray(response) ? response : {};
   const addons = source.addons && typeof source.addons === "object" ? source.addons : {};
   const plugins = source.plugins && typeof source.plugins === "object" ? source.plugins : {};
-  const libraryItems = source.library_items && typeof source.library_items === "object" ? source.library_items : {};
+  const libraryItems =
+    (source.library_items && typeof source.library_items === "object" ? source.library_items : null) ||
+    (source.library && typeof source.library === "object" ? source.library : {}) ||
+    {};
   const watchProgress = source.watch_progress && typeof source.watch_progress === "object" ? source.watch_progress : {};
   const watchedItems = source.watched_items && typeof source.watched_items === "object" ? source.watched_items : {};
   const remoteProfiles = source.profiles && typeof source.profiles === "object" ? source.profiles : {};
   const profiles = await ProfileManager.getProfiles();
+
+  // Prefer remote profile slots so desk-created profiles appear even before a
+  // local pull finishes; fall back to local ids when overview is sparse.
   const allProfileIds = Array.from(
     new Set([
+      ...Object.keys(remoteProfiles),
+      ...profiles.map((profile) => String(profile?.id || profile?.profileIndex || "")),
       ...Object.keys(addons),
       ...Object.keys(plugins),
       ...Object.keys(libraryItems),
       ...Object.keys(watchProgress),
-      ...Object.keys(watchedItems),
-      ...Object.keys(remoteProfiles)
+      ...Object.keys(watchedItems)
     ])
   )
     .map((id) => Number(id))
@@ -256,12 +263,15 @@ export async function fetchAccountSyncOverview() {
     }, 0);
 
   return {
-    profileCount: Object.keys(remoteProfiles).length,
+    profileCount: Object.keys(remoteProfiles).length || profiles.length,
     totalAddons: total(addons),
     totalPlugins: total(plugins),
     totalLibrary: total(libraryItems),
     totalWatchProgress: total(watchProgress),
     totalWatchedItems: total(watchedItems),
+    revision: Number(source.revision || 0) || 0,
+    profilesRevision: Number(source.profilesRevision || source.revision || 0) || 0,
+    addonsRevision: Number(source.addonsRevision || 0) || 0,
     perProfile: allProfileIds.map((profileId) => {
       const profileIdString = String(profileId);
       const localProfile = profiles.find(

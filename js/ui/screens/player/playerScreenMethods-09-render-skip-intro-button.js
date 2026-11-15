@@ -6,6 +6,7 @@ import * as internals from "./playerScreenContext.js";
 export function createPlayerScreenMethods09() {
   const {
     PlayerSettingsStore,
+    TorrentSettingsStore,
     DirectDebridResolver,
     WebOsEngineFsResolver,
     TizenStreamingServerResolver,
@@ -256,7 +257,8 @@ export function createPlayerScreenMethods09() {
           return canResolveMediaServerStream(entry) ||
             DirectDebridResolver.shouldListStream(entry) ||
             WebOsEngineFsResolver.canResolveStream(entry) ||
-            TizenStreamingServerResolver.canResolveStream(entry)
+            TizenStreamingServerResolver.canResolveStream(entry) ||
+            (Boolean(TorrentSettingsStore.get().p2pEnabled) && Boolean(entry.infoHash || entry.raw?.infoHash))
             ? entry
             : null;
         })

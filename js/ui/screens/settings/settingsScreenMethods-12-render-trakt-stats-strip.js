@@ -138,7 +138,10 @@ export function createSettingsScreenMethods12() {
         }
         await this.render({ refreshModel: false });
       });
-      this.actionMap.set("about:debugConsole", () => Router.navigate("debugConsole"));
+      const debugEnabled = globalThis.__NUVIO_DEBUG__ === true;
+      if (debugEnabled) {
+        this.actionMap.set("about:debugConsole", () => Router.navigate("debugConsole"));
+      }
 
       return `
           ${this.renderSectionHeader(SECTION_META.find((item) => item.id === "about"))}
@@ -181,12 +184,16 @@ export function createSettingsScreenMethods12() {
                 title: t("about_licenses_attributions", {}, "Licenses & Attribution"),
                 subtitle: t("licenses_attributions_section_data", {}, "Data & services")
               })}
-              ${this.renderActionRow({
-                focusKey: "about:debugConsole",
-                title: t("about_debug_console_title", {}, "Console debug"),
-                subtitle: t("about_debug_console_subtitle", {}, "Show latest error/warning events"),
-                leadingIcon: "terminal"
-              })}
+              ${
+                debugEnabled
+                  ? this.renderActionRow({
+                      focusKey: "about:debugConsole",
+                      title: t("about_debug_console_title", {}, "Console debug"),
+                      subtitle: t("about_debug_console_subtitle", {}, "Show latest error/warning events"),
+                      leadingIcon: "terminal"
+                    })
+                  : ""
+              }
             </div>
           </div>
         `;

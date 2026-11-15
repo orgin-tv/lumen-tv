@@ -1,0 +1,33 @@
+name: TV sync-path smoke
+
+on:
+  push:
+    paths:
+      - "js/core/profile/**"
+      - "js/core/sync/**"
+      - "js/core/auth/**"
+      - "scripts/test-sync-*.mjs"
+      - "scripts/test-addon-seed-push.mjs"
+      - "scripts/smoke-sync.mjs"
+      - ".github/workflows/sync-smoke.yml"
+  pull_request:
+    paths:
+      - "js/core/profile/**"
+      - "js/core/sync/**"
+      - "js/core/auth/**"
+      - "scripts/test-sync-*.mjs"
+      - "scripts/test-addon-seed-push.mjs"
+      - "scripts/smoke-sync.mjs"
+      - ".github/workflows/sync-smoke.yml"
+
+jobs:
+  unit-sync-helpers:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+      - run: npm ci
+      - run: node scripts/test-addon-seed-push.mjs

@@ -54,33 +54,45 @@ function getLanUrls() {
   return Array.from(new Set(urls)).sort();
 }
 
+const BLOCKED_BASENAMES = new Set([
+  "local.properties",
+  "local.example.properties",
+  ".env",
+  ".env.local",
+  ".gitignore"
+]);
+
+function securityHeaders(extra = {}) {
+  return {
+    "X-Content-Type-Options": "nosniff",
+    "X-Frame-Options": "SAMEORIGIN",
+    "Referrer-Policy": "no-referrer",
+    "Cache-Control": "no-store",
+    ...extra
+  };
+}
+
 function resolveRequestPath(urlPathname) {
   let pathname = decodeURIComponent(String(urlPathname || "/"));
   if (pathname === "/") {
     pathname = "/index.html";
   }
   const normalized = path.normalize(pathname).replace(/^(\.\.[/\\])+/, "");
-  return path.join(rootDir, normalized);
-}
-
-function resolveDistPathForRootFile(rootFilePath) {
-  const relativePath = path.relative(rootDir, rootFilePath);
-  if (!relativePath || relativePath.startsWith("..") || path.isAbsolute(relativePath)) {
-    return "";
+  const baseName = path.basename(normalized).toLowerCase();
+  if (BLOCKED_BASENAMES.has(baseName) || normalized.toLowerCase().includes("local.properties")) {
+    return null;
   }
-  return path.join(distDir, relativePath);
+  // Beta/default: serve built dist only so repo sources and secrets stay private.
+  return path.join(distDir, normalized);
 }
 
 async function resolveRequestFile(pathname) {
-  const rootPath = resolveRequestPath(pathname);
-  const rootStat = await stat(rootPath).catch(() => null);
-  const distPath = resolveDistPathForRootFile(rootPath);
-  const distStat = distPath ? await stat(distPath).catch(() => null) : null;
-  if (distStat?.isFile()) {
-    return { filePath: distPath, fileStat: distStat };
+  const filePath = resolveRequestPath(pathname);
+  if (!filePath) {
+    return { filePath: "", fileStat: null, blocked: true };
   }
-
-  return { filePath: rootPath, fileStat: rootStat };
+  const fileStat = await stat(filePath).catch(() => null);
+  return { filePath, fileStat, blocked: false };
 }
 
 function requestLocalMediaPath(
@@ -191,12 +203,23 @@ async function proxyLocalMediaRequest(request, response, pathname) {
 const server = http.createServer(async (request, response) => {
   try {
     const requestUrl = new URL(request.url || "/", `http://${request.headers.host || "localhost"}`);
+    const lowerPath = requestUrl.pathname.toLowerCase();
+    if (
+      lowerPath.includes("local.properties") ||
+      lowerPath.endsWith("/.env") ||
+      lowerPath.endsWith("/.env.local")
+    ) {
+      response.writeHead(404, securityHeaders({ "Content-Type": "text/plain; charset=utf-8" }));
+      response.end("Not found");
+      return;
+    }
+
     if (requestUrl.pathname === "/nuvio.env.js") {
       const { env } = await readEnvProperties({ rootDir });
-      response.writeHead(200, {
-        "Cache-Control": "no-store",
-        "Content-Type": "application/javascript; charset=utf-8"
-      });
+      response.writeHead(
+        200,
+        securityHeaders({ "Content-Type": "application/javascript; charset=utf-8" })
+      );
       response.end(buildRuntimeEnvScript(env));
       return;
     }
@@ -210,7 +233,12 @@ const server = http.createServer(async (request, response) => {
       return;
     }
 
-    let { filePath, fileStat } = await resolveRequestFile(requestUrl.pathname);
+    let { filePath, fileStat, blocked } = await resolveRequestFile(requestUrl.pathname);
+    if (blocked) {
+      response.writeHead(404, securityHeaders({ "Content-Type": "text/plain; charset=utf-8" }));
+      response.end("Not found");
+      return;
+    }
 
     if (fileStat?.isDirectory()) {
       filePath = path.join(filePath, "index.html");
@@ -218,19 +246,21 @@ const server = http.createServer(async (request, response) => {
     }
 
     if (!fileStat?.isFile()) {
-      response.writeHead(404, { "Content-Type": "text/plain; charset=utf-8" });
+      response.writeHead(404, securityHeaders({ "Content-Type": "text/plain; charset=utf-8" }));
       response.end("Not found");
       return;
     }
 
     const fileContents = await readFile(filePath);
-    response.writeHead(200, {
-      "Cache-Control": "no-store",
-      "Content-Type": getContentType(filePath)
-    });
+    response.writeHead(
+      200,
+      securityHeaders({
+        "Content-Type": getContentType(filePath)
+      })
+    );
     response.end(fileContents);
   } catch (error) {
-    response.writeHead(500, { "Content-Type": "text/plain; charset=utf-8" });
+    response.writeHead(500, securityHeaders({ "Content-Type": "text/plain; charset=utf-8" }));
     response.end(`Server error: ${error?.message || error}`);
   }
 });
@@ -240,7 +270,7 @@ await ensureLocalMediaRuntime();
 server.listen(port, host, async () => {
   const localHost = host === "0.0.0.0" ? "127.0.0.1" : host;
   const mediaPort = await findLocalMediaServerPort();
-  console.log(`Serving Lumen TV from ${rootDir}`);
+  console.log(`Serving Lumen TV dist from ${distDir}`);
   console.log(`Local URL: http://${localHost}:${port}/`);
   for (const lanUrl of getLanUrls()) {
     console.log(`LAN URL: ${lanUrl}`);

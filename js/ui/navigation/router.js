@@ -188,7 +188,7 @@ Object.assign(Router, {
     search: SearchScreen,
     discover: DiscoverScreen,
     settings: SettingsScreen,
-    debugConsole: ConsoleDebugScreen,
+    ...(globalThis.__NUVIO_DEBUG__ === true ? { debugConsole: ConsoleDebugScreen } : {}),
     trakt: TraktScreen,
     supportersContributors: SupportersContributorsScreen,
     licensesAttributions: LicensesAttributionsScreen,

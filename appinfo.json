@@ -1,6 +1,6 @@
 {
   "id": "space.lumen.webos",
-  "version": "1.4.1",
+  "version": "1.4.1-beta",
   "vendor": "Lumen",
   "type": "web",
   "main": "index.html",

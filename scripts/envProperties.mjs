@@ -2,7 +2,8 @@ import { access, readFile, writeFile } from "node:fs/promises";
 import { constants as fsConstants } from "node:fs";
 import path from "node:path";
 
-export const ENV_PROPERTY_KEYS = [
+/** Keys allowed into the client-shipped nuvio.env.js bundle. */
+export const PUBLIC_ENV_PROPERTY_KEYS = [
   "NUVIO_SUPABASE_URL",
   "NUVIO_SUPABASE_ANON_KEY",
   "NUVIO_SUPABASE_FALLBACK_URL",
@@ -20,12 +21,16 @@ export const ENV_PROPERTY_KEYS = [
   "SPONSOR_NAMES",
   "TMDB_API_KEY",
   "TRAKT_CLIENT_ID",
-  "TRAKT_CLIENT_SECRET",
   "SIMKL_CLIENT_ID",
   "MDBLIST_CLIENT_ID",
   "SIMKL_APP_NAME",
   "PREMIUMIZE_CLIENT_ID"
 ];
+
+/** Private keys may exist in local.properties for tooling but must never ship to clients. */
+export const PRIVATE_ENV_PROPERTY_KEYS = ["TRAKT_CLIENT_SECRET"];
+
+export const ENV_PROPERTY_KEYS = [...PUBLIC_ENV_PROPERTY_KEYS, ...PRIVATE_ENV_PROPERTY_KEYS];
 
 const DEFAULT_ENV_VALUES = {
   NUVIO_SUPABASE_URL: "http://127.0.0.1:3847/api/bridge",
@@ -104,9 +109,10 @@ export function parseProperties(source = "") {
   return properties;
 }
 
-export function normalizeEnvProperties(properties = {}) {
+export function normalizeEnvProperties(properties = {}, { publicOnly = false } = {}) {
   const env = {};
-  ENV_PROPERTY_KEYS.forEach((key) => {
+  const keys = publicOnly ? PUBLIC_ENV_PROPERTY_KEYS : ENV_PROPERTY_KEYS;
+  keys.forEach((key) => {
     const rawValue = Object.prototype.hasOwnProperty.call(properties, key)
       ? properties[key]
       : DEFAULT_ENV_VALUES[key];
@@ -115,6 +121,19 @@ export function normalizeEnvProperties(properties = {}) {
     env[key] = shouldUseDefault ? DEFAULT_ENV_VALUES[key] : normalizedValue;
   });
   return env;
+}
+
+export function assertBetaSyncUrlConfigured(env = {}) {
+  if (process.env.BETA_REQUIRE_SYNC_URL !== "1") {
+    return;
+  }
+  const syncUrl = String(env.LUMEN_SYNC_URL || "").trim();
+  const bridgeUrl = String(env.NUVIO_SUPABASE_URL || "").trim();
+  if (!syncUrl || !bridgeUrl) {
+    throw new Error(
+      "BETA_REQUIRE_SYNC_URL=1 requires LUMEN_SYNC_URL and NUVIO_SUPABASE_URL in local.properties."
+    );
+  }
 }
 
 export async function resolveLocalPropertiesSource({ rootDir, sourcePath = "" } = {}) {
@@ -157,7 +176,9 @@ export async function readEnvProperties({ rootDir, sourcePath = "" } = {}) {
 }
 
 export function buildRuntimeEnvScript(env = {}) {
-  const values = normalizeEnvProperties(env);
+  // Never embed private secrets in the browser/TV-shipped env script.
+  const values = normalizeEnvProperties(env, { publicOnly: true });
+  assertBetaSyncUrlConfigured(values);
   return `(function defineNuvioEnv() {
   var root = typeof globalThis !== "undefined" ? globalThis : window;
   var env = root.__NUVIO_ENV__ || {};

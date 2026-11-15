@@ -105,6 +105,8 @@ import { TrackingScrobbleService } from "../../../data/repository/trackingScrobb
 
 import { WebOsEngineFsResolver } from "../../../core/p2p/webosEngineFsResolver.js";
 
+import { getInfoHash } from "../../../core/p2p/webOsEngineFsResolverHelpers-01-enginefs-create-timeout-ms.js";
+
 import { TizenStreamingServerResolver } from "../../../core/p2p/tizenStreamingServerResolver.js";
 
 import { TizenEngineFsService } from "../../../platform/tizen/tizenEngineFsService.js";
@@ -289,7 +291,8 @@ export function flattenStreamGroups(streamResult) {
         canResolveMediaServerStream(entry) ||
         DirectDebridResolver.shouldListStream(entry) ||
         WebOsEngineFsResolver.canResolveStream(entry) ||
-        TizenStreamingServerResolver.canResolveStream(entry)
+        TizenStreamingServerResolver.canResolveStream(entry) ||
+        (Boolean(TorrentSettingsStore.get().p2pEnabled) && Boolean(getInfoHash(entry)))
       ) {
         flattened.push(entry);
       }

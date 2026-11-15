@@ -229,6 +229,14 @@ export function createPlayerScreenMethods35() {
           if (!this.isActiveMountToken(mountToken)) {
             return;
           }
+          const hasTorrentLocator = Boolean(
+            streamCandidate?.infoHash ||
+            streamCandidate?.raw?.infoHash ||
+            String(streamCandidate?.url || streamCandidate?.externalUrl || "")
+              .trim()
+              .toLowerCase()
+              .startsWith("magnet:")
+          );
           const startupMessage =
             fallbackError ||
             (tizenP2pUnsupported
@@ -241,7 +249,13 @@ export function createPlayerScreenMethods35() {
                       [t("player_error_playback_fallback", {}, "Playback error")],
                       "Failed to start torrent: %1$s"
                     )
-                  : t("player_error_playback_fallback", {}, "Playback error"));
+                  : hasTorrentLocator
+                    ? t(
+                        "player_error_p2p_unavailable",
+                        {},
+                        "Torrent playback needs a supported TV P2P runtime or a configured Debrid account."
+                      )
+                    : t("player_error_playback_fallback", {}, "Playback error"));
           if (!this.hasPresentedPlaybackFrame) {
             this.showStartupError(startupMessage, {
               streamCandidate,

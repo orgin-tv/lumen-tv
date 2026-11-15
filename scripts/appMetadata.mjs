@@ -1,3 +1,4 @@
+import { execSync } from "node:child_process";
 import { readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
@@ -15,17 +16,37 @@ async function writeJson(filePath, value) {
   await writeFile(filePath, `${JSON.stringify(value, null, 2)}\n`, "utf8");
 }
 
+function shortBuildId() {
+  try {
+    return execSync("git rev-parse --short HEAD", {
+      cwd: rootDir,
+      encoding: "utf8",
+      stdio: ["ignore", "pipe", "ignore"]
+    }).trim();
+  } catch {
+    const d = new Date();
+    const y = d.getUTCFullYear();
+    const m = String(d.getUTCMonth() + 1).padStart(2, "0");
+    const day = String(d.getUTCDate()).padStart(2, "0");
+    return `${y}${m}${day}`;
+  }
+}
+
 export async function readAppMetadata() {
   const packageJson = await readJson(packageJsonPath);
-  const version = String(packageJson?.version || "0.0.0").trim() || "0.0.0";
+  const base = String(packageJson?.version || "0.0.0").trim() || "0.0.0";
+  const stamped = /beta/i.test(base)
+    ? `${base}+${shortBuildId()}`
+    : `${base}-beta+${shortBuildId()}`;
   return {
     name: String(packageJson?.name || "").trim(),
-    version
+    version: stamped,
+    packageVersion: base
   };
 }
 
 export async function syncVersionFiles() {
-  const { version } = await readAppMetadata();
+  const { packageVersion } = await readAppMetadata();
 
   await Promise.all(
     versionManagedJsonPaths.map(async (filePath) => {
@@ -39,13 +60,13 @@ export async function syncVersionFiles() {
         throw error;
       }
 
-      if (String(parsed?.version || "").trim() === version) {
+      if (String(parsed?.version || "").trim() === packageVersion) {
         return;
       }
-      parsed.version = version;
+      parsed.version = packageVersion;
       await writeJson(filePath, parsed);
     })
   );
 
-  return version;
+  return packageVersion;
 }

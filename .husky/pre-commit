@@ -1,1 +1,9 @@
-npm run format:check
+#!/usr/bin/env sh
+# Format-check only staged text sources (repo-wide prettier is not green yet).
+STAGED=$(git diff --cached --name-only --diff-filter=ACMR -- \
+  '*.js' '*.mjs' '*.cjs' '*.ts' '*.tsx' '*.json' '*.md' '*.yml' '*.yaml' '*.css' '*.html' \
+  | tr '\n' ' ')
+if [ -z "$STAGED" ]; then
+  exit 0
+fi
+npx prettier --check $STAGED

@@ -12,13 +12,10 @@ function isValidClientId(value) {
 
 function generateClientId() {
   const bytes = new Uint8Array(CLIENT_ID_LENGTH);
-  if (globalThis.crypto?.getRandomValues) {
-    globalThis.crypto.getRandomValues(bytes);
-  } else {
-    for (let index = 0; index < bytes.length; index += 1) {
-      bytes[index] = Math.floor(Math.random() * 256);
-    }
+  if (typeof globalThis.crypto?.getRandomValues !== "function") {
+    throw new Error("Secure random generator unavailable for sync client id");
   }
+  globalThis.crypto.getRandomValues(bytes);
 
   let suffix = "";
   for (const byte of bytes) {

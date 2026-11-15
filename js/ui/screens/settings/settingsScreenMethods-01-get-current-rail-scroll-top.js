@@ -167,7 +167,7 @@ export function createSettingsScreenMethods01() {
       });
       this.liveSyncUnsubscribe = StartupSyncService.subscribeToPullCompleted?.((event) => {
         if (!this.isMounted || Router.getCurrent() !== "settings") return;
-        if (event?.source === "live-sync" || event?.profilesChanged) {
+        if (event?.source === "live-sync" || event?.profilesChanged || event?.addonsChanged) {
           void this.render({ refreshModel: true });
         }
       });

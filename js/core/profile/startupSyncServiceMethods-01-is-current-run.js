@@ -176,9 +176,23 @@ export function createStartupSyncServiceMethods01() {
       return Promise.allSettled(pendingPromises).then(() => true);
     },
     enableProfileScopedSync() {
+      const wasEnabled = Boolean(this.profileScopedSyncEnabled);
       this.profileScopedSyncEnabled = true;
       if (this.started) {
         LiveSyncPoller.start();
+        // Flush any local addon edits that landed before scoped sync was armed,
+        // and seed Sync once so an empty desk learns about TV-managed catalogs.
+        this.scheduleAddonPush();
+        if (!wasEnabled) {
+          void this.requestSyncNow({
+            force: false,
+            includeProfileSettings: true,
+            pushAfterPull: true,
+            notifyPullCompleted: false
+          }).catch((error) => {
+            console.warn("Profile-scoped seed sync failed", error);
+          });
+        }
       }
     },
     ensurePluginServiceReady({ force = true } = {}) {

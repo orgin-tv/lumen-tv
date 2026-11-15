@@ -15,6 +15,8 @@ import { PlayerSettingsStore } from "../../../data/local/playerSettingsStore.js"
 
 import { StreamPreferencesStore } from "../../../data/local/streamPreferencesStore.js";
 
+import { TorrentSettingsStore } from "../../../data/local/torrentSettingsStore.js";
+
 import { PluginManager } from "../../../core/player/pluginManager.js";
 
 import { PLUGIN_REPOSITORY_TYPES, isExecutableScraper, pluginSupportsType } from "../../../core/player/pluginModels.js";
@@ -35,11 +37,20 @@ import { contentTextDirection } from "../../../core/util/contentTextDirection.js
 
 import { WebOsEngineFsResolver } from "../../../core/p2p/webosEngineFsResolver.js";
 
+import { getInfoHash } from "../../../core/p2p/webOsEngineFsResolverHelpers-01-enginefs-create-timeout-ms.js";
+
 import { TizenStreamingServerResolver } from "../../../core/p2p/tizenStreamingServerResolver.js";
 
 import { DebridSettingsStore } from "../../../data/local/debridSettingsStore.js";
 
 import { StreamBadgeSettingsStore } from "../../../data/local/streamBadgeSettingsStore.js";
+
+function canListEnabledP2pStream(entry = {}) {
+  // Browser/desktop has no EngineFS, so canResolveStream stays false. Still list
+  // infoHash torrents when the user has enabled P2P so Sync-installed Torrentio
+  // results are visible (playback still needs TV P2P or Debrid).
+  return Boolean(TorrentSettingsStore.get().p2pEnabled && getInfoHash(entry));
+}
 
 import { ensureWebOsImageProxyReady, onWebOsImageProxyReady } from "../../../core/media/imageProxy.js";
 
@@ -154,7 +165,8 @@ export function flattenStreams(streamResult) {
         canResolveMediaServerStream(entry) ||
         DirectDebridResolver.shouldListStream(entry) ||
         WebOsEngineFsResolver.canResolveStream(entry) ||
-        TizenStreamingServerResolver.canResolveStream(entry)
+        TizenStreamingServerResolver.canResolveStream(entry) ||
+        canListEnabledP2pStream(entry)
       ) {
         flattened.push(entry);
       }

@@ -15,6 +15,7 @@ export function createPlayerScreenMethods01() {
     streamRepository,
     PlayerSettingsStore,
     Environment,
+    TorrentSettingsStore,
     DirectDebridResolver,
     WebOsEngineFsResolver,
     TizenStreamingServerResolver,
@@ -255,12 +256,15 @@ export function createPlayerScreenMethods01() {
         this.schedulePlaybackStallGuard();
       } else if (!this.isExternalFrameMode()) {
         const sourceCandidate = initialStreamCandidate || this.getCurrentStreamCandidate();
+        const canAttemptListedTorrent =
+          Boolean(TorrentSettingsStore.get().p2pEnabled) && Boolean(sourceCandidate?.infoHash || sourceCandidate?.raw?.infoHash);
         if (
           sourceCandidate &&
           (canResolveMediaServerStream(sourceCandidate) ||
             DirectDebridResolver.canResolveStream(sourceCandidate) ||
             WebOsEngineFsResolver.canResolveStream(sourceCandidate) ||
-            TizenStreamingServerResolver.canResolveStream(sourceCandidate))
+            TizenStreamingServerResolver.canResolveStream(sourceCandidate) ||
+            canAttemptListedTorrent)
         ) {
           void this.playStreamCandidate(sourceCandidate, {
             preservePendingRestore: true,

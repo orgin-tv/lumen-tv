@@ -1,12 +1,14 @@
 import { AuthManager } from "../auth/authManager.js";
 import { isMissingResourceError, isSyncBackoffActive } from "../sync/syncBackoffPolicy.js";
-import { addonRepository } from "../../data/repository/addonRepository.js";
+import {
+  addonRepository,
+  DEFAULT_ADDON_URLS,
+  isDefaultAddonUrlList
+} from "../../data/repository/addonRepository.js";
 import { SupabaseApi } from "../../data/remote/supabase/supabaseApi.js";
 import { ProfileManager } from "./profileManager.js";
 import { getSyncClientId } from "../sync/syncClientIdentity.js";
 
-const ADDONS_TABLE = "addons";
-const TABLE = "tv_addons";
 const SYNC_OVERVIEW_RPC = "get_sync_overview";
 
 // Records the outcome of the latest pull so the Addons screen can show a
@@ -20,20 +22,6 @@ function recordPullStatus(state, { count = 0, error = null } = {}) {
     error: error ? String(error.message || error) : null,
     at: Date.now()
   };
-}
-
-function isOnConflictConstraintError(error) {
-  if (!error) {
-    return false;
-  }
-  if (typeof error.code === "string" && error.code === "42P10") {
-    return true;
-  }
-  const message = String(error.message || "");
-  return (
-    message.includes("42P10") ||
-    message.includes("no unique or exclusion constraint matching the ON CONFLICT specification")
-  );
 }
 
 async function resolveProfileId() {
@@ -184,38 +172,119 @@ function applyPulledAddons(entries = []) {
   return urls;
 }
 
+function mergeCloudAddonsWithDefaults(entries = []) {
+  const byUrl = new Map();
+  // Always keep local catalog/subtitle fallbacks so a desk that only stores
+  // stream addons (Torrentio, etc.) cannot blank Home.
+  DEFAULT_ADDON_URLS.forEach((url, index) => {
+    byUrl.set(addonRepository.normalizeUrl(url), {
+      url,
+      sortOrder: index,
+      enabled: true,
+      name: null,
+      displayName: null
+    });
+  });
+  entries.forEach((entry, index) => {
+    const url = entry?.url;
+    if (!url) return;
+    const key = addonRepository.normalizeUrl(url);
+    if (!key) return;
+    byUrl.set(key, {
+      ...entry,
+      url,
+      sortOrder: DEFAULT_ADDON_URLS.length + index
+    });
+  });
+  return Array.from(byUrl.values()).sort(
+    (left, right) => (left.sortOrder || 0) - (right.sortOrder || 0)
+  );
+}
+
+function isManagedAddonUrl(url) {
+  return Boolean(url) && !isDefaultAddonUrlList([url]);
+}
+
+function managedAddonUrls(urls = []) {
+  return (Array.isArray(urls) ? urls : []).filter((url) => isManagedAddonUrl(url));
+}
+
 function prepareRemoteAddonSnapshot(rows, { allowVerifiedEmptySnapshot = false } = {}) {
   const entries = extractAddonEntries(rows);
   const urls = entries.map((entry) => entry.url).filter(Boolean);
   const localUrls = addonRepository.getInstalledAddonUrls();
+  const localHasManaged = managedAddonUrls(localUrls).length > 0;
+  const remoteIsEmptyManaged = urls.length === 0 || isDefaultAddonUrlList(urls);
 
-  // Android TV does not treat an empty remote snapshot as authoritative when
-  // local addons already exist. An empty response must not erase the addon list
-  // (or its names/enabled states) used by catalog, stream, and subtitle repositories.
-  if (urls.length === 0 && !allowVerifiedEmptySnapshot) {
-    if (localUrls.length > 0) {
-      console.warn(
-        `Addon sync pull returned an empty remote list while local has ${localUrls.length} entries; preserving local addons`
-      );
-    }
-    return { urls: [...localUrls], shouldApply: false };
+  // Empty / defaults-only Sync catalog with local managed addons: keep local and
+  // seed Sync so desk learns about TV-installed manifests.
+  if (remoteIsEmptyManaged && localHasManaged && !allowVerifiedEmptySnapshot) {
+    console.warn(
+      `Addon sync pull returned an empty managed remote list while local has ${localUrls.length} entries; preserving local addons and seeding Sync`
+    );
+    return {
+      urls: [...localUrls],
+      shouldApply: false,
+      shouldSeedPush: true,
+      cloudCount: 0
+    };
   }
 
-  applyPulledAddons(entries);
-  return { urls, shouldApply: true };
+  // Empty Sync catalog: keep local TV fallbacks (Cinemeta / OpenSubtitles) for
+  // browsing, but do not preserve a previously cloud-pushed list as "synced".
+  if (urls.length === 0) {
+    if (allowVerifiedEmptySnapshot || isDefaultAddonUrlList(localUrls)) {
+      const defaults = mergeCloudAddonsWithDefaults([]);
+      applyPulledAddons(defaults);
+      return {
+        urls: defaults.map((entry) => entry.url),
+        shouldApply: true,
+        shouldSeedPush: false,
+        cloudCount: 0
+      };
+    }
+    console.warn(
+      `Addon sync pull returned an empty remote list while local has ${localUrls.length} custom entries; preserving local addons`
+    );
+    return { urls: [...localUrls], shouldApply: false, shouldSeedPush: true, cloudCount: 0 };
+  }
+
+  // Desk only has the TV defaults mirrored — treat as no managed cloud catalog.
+  if (isDefaultAddonUrlList(urls)) {
+    const defaults = mergeCloudAddonsWithDefaults([]);
+    applyPulledAddons(defaults);
+    return {
+      urls: defaults.map((entry) => entry.url),
+      shouldApply: true,
+      shouldSeedPush: false,
+      cloudCount: 0
+    };
+  }
+
+  const merged = mergeCloudAddonsWithDefaults(entries);
+  applyPulledAddons(merged);
+  return {
+    urls: merged.map((entry) => entry.url),
+    shouldApply: true,
+    shouldSeedPush: false,
+    cloudCount: urls.filter((url) => isManagedAddonUrl(url)).length
+  };
 }
 
 async function reconcileRemoteAddonSnapshot(rows, options = {}) {
-  const { urls, shouldApply } = prepareRemoteAddonSnapshot(rows, options);
+  const { urls, shouldApply, shouldSeedPush } = prepareRemoteAddonSnapshot(rows, options);
   if (shouldApply) {
     await addonRepository.setAddonOrder(urls, { silent: true, allowReadOnly: true });
   }
-  return urls;
+  return { urls, shouldSeedPush: Boolean(shouldSeedPush) };
 }
 
 async function reconcileFetchedAddonSnapshot(rows, profileId, requestedProfileId) {
   if (String(ProfileManager.getActiveProfileId()) !== String(requestedProfileId)) {
-    return addonRepository.getInstalledAddonUrls();
+    return {
+      urls: addonRepository.getInstalledAddonUrls(),
+      shouldSeedPush: false
+    };
   }
   const allowVerifiedEmptySnapshot =
     Array.isArray(rows) &&
@@ -223,9 +292,33 @@ async function reconcileFetchedAddonSnapshot(rows, profileId, requestedProfileId
     addonRepository.getInstalledAddonUrls().length > 0 &&
     (await verifyEmptyRemoteAddonSnapshot(profileId));
   if (String(ProfileManager.getActiveProfileId()) !== String(requestedProfileId)) {
-    return addonRepository.getInstalledAddonUrls();
+    return {
+      urls: addonRepository.getInstalledAddonUrls(),
+      shouldSeedPush: false
+    };
   }
   return reconcileRemoteAddonSnapshot(rows, { allowVerifiedEmptySnapshot });
+}
+
+let seedPushInFlight = null;
+
+async function maybeSeedPushAfterPull(shouldSeedPush) {
+  if (!shouldSeedPush) {
+    return;
+  }
+  if (seedPushInFlight) {
+    return seedPushInFlight;
+  }
+  seedPushInFlight = (async () => {
+    try {
+      await LibrarySyncService.push();
+    } catch (error) {
+      console.warn("Addon sync seed push failed", error);
+    } finally {
+      seedPushInFlight = null;
+    }
+  })();
+  return seedPushInFlight;
 }
 
 export const LibrarySyncService = {
@@ -251,83 +344,38 @@ export const LibrarySyncService = {
         recordPullStatus("stale", { count: localUrls.length });
         return addonRepository.getInstalledAddonUrls();
       }
-      const ownerId = await AuthManager.getEffectiveUserId();
-      if (String(ProfileManager.getActiveProfileId()) !== requestedProfileId) {
-        recordPullStatus("stale", { count: localUrls.length });
-        return addonRepository.getInstalledAddonUrls();
-      }
-      let addonTableMissing = false;
 
+      // Lumen Sync bridge speaks RPCs; skip table probes that only 404-noise.
       try {
-        const addonRows = await SupabaseApi.select(
-          ADDONS_TABLE,
-          `user_id=eq.${encodeURIComponent(ownerId)}&profile_id=eq.${profileId}&select=*&order=sort_order.asc`,
+        const rpcRows = await SupabaseApi.rpc(
+          "sync_pull_addons",
+          { p_profile_id: profileId },
           true
         );
-        const addonUrls = await reconcileFetchedAddonSnapshot(
-          addonRows,
+        const reconciled = await reconcileFetchedAddonSnapshot(
+          Array.isArray(rpcRows) ? rpcRows : [],
           profileId,
           requestedProfileId
         );
-        recordPullStatus("ok", { count: addonUrls.length });
-        return addonUrls;
-      } catch (addonsTableError) {
-        addonTableMissing = isMissingResourceError(addonsTableError);
-        if (!addonTableMissing) {
-          readError = addonsTableError;
-          recordPullStatus("error", { count: localUrls.length, error: readError });
-          console.warn("Addon sync pull addons-table read failed", addonsTableError);
-          return localUrls;
-        }
-        console.warn("Addon sync pull addons-table read failed", addonsTableError);
-      }
-
-      let tvTableMissing = false;
-      try {
-        const rows = await SupabaseApi.select(
-          TABLE,
-          `owner_id=eq.${encodeURIComponent(ownerId)}&select=*&order=position.asc`,
-          true
-        );
-        const urls = await reconcileFetchedAddonSnapshot(rows, profileId, requestedProfileId);
-        recordPullStatus("ok", { count: urls.length });
-        return urls;
-      } catch (tvTableError) {
-        tvTableMissing = isMissingResourceError(tvTableError);
-        if (!tvTableMissing) {
-          readError = tvTableError;
-          recordPullStatus("error", { count: localUrls.length, error: readError });
-          console.warn("Addon sync pull tv-table read failed", tvTableError);
-          return localUrls;
-        }
-        console.warn("Addon sync pull tv-table read failed", tvTableError);
-      }
-
-      if (addonTableMissing && tvTableMissing) {
-        try {
-          const rpcRows = await SupabaseApi.rpc(
-            "sync_pull_addons",
-            { p_profile_id: profileId },
-            true
-          );
-          const urls = await reconcileFetchedAddonSnapshot(rpcRows, profileId, requestedProfileId);
-          recordPullStatus("ok", { count: urls.length });
-          return urls;
-        } catch (rpcError) {
-          readError = rpcError;
+        const cloudCount = isDefaultAddonUrlList(
+          (Array.isArray(rpcRows) ? rpcRows : []).map((row) => row?.url || row?.manifest_url)
+        )
+          ? 0
+          : Array.isArray(rpcRows)
+            ? rpcRows.length
+            : 0;
+        recordPullStatus("ok", { count: cloudCount });
+        await maybeSeedPushAfterPull(reconciled.shouldSeedPush);
+        return reconciled.urls;
+      } catch (rpcError) {
+        // Lumen Sync is RPC-only — do not probe legacy addons/tv_addons tables (404 noise).
+        readError = rpcError;
+        recordPullStatus("error", { count: localUrls.length, error: readError });
+        if (!isMissingResourceError(rpcError)) {
           console.warn("Addon sync pull RPC failed", rpcError);
         }
+        return localUrls.length ? localUrls : [...DEFAULT_ADDON_URLS];
       }
-
-      if (readError) {
-        recordPullStatus("error", { count: localUrls.length, error: readError });
-      } else {
-        recordPullStatus("ok", { count: localUrls.length });
-      }
-      if (localUrls.length) {
-        return localUrls;
-      }
-      return [];
     } catch (error) {
       recordPullStatus("error", { error });
       console.warn("Library sync pull failed", error);
@@ -356,86 +404,31 @@ export const LibrarySyncService = {
         return false;
       }
 
-      try {
-        await SupabaseApi.rpc(
-          "sync_push_addons",
-          {
-            p_profile_id: profileId,
-            p_addons: urls.map((url, index) => ({
-              url,
-              sort_order: index,
-              enabled: addonRepository.isAddonEnabled(url),
-              ...(addonRepository.getAddonDisplayNameOverride(url)
-                ? { name: addonRepository.getAddonDisplayNameOverride(url) }
-                : {})
-            })),
-            p_origin_client_id: getSyncClientId()
-          },
-          true
-        );
+      // Desk stores managed addons only — strip TV local fallbacks from the payload.
+      const managedUrls = managedAddonUrls(urls);
+
+      // Never promote the TV's built-in fallback pair into the Sync desk catalog.
+      if (!managedUrls.length) {
         return true;
-      } catch (rpcError) {
-        if (!isMissingResourceError(rpcError)) {
-          throw rpcError;
-        }
-        console.warn("Addon sync push RPC is unavailable, falling back to legacy table", rpcError);
       }
 
-      const ownerId = await AuthManager.getEffectiveUserId();
-      try {
-        await SupabaseApi.delete(
-          ADDONS_TABLE,
-          `user_id=eq.${encodeURIComponent(ownerId)}&profile_id=eq.${profileId}`,
-          true
-        );
-        const addonRows = urls.map((url, index) => {
-          const name = addonRepository.getAddonDisplayNameOverride(url);
-          return {
-            user_id: ownerId,
-            profile_id: profileId,
+      await SupabaseApi.rpc(
+        "sync_push_addons",
+        {
+          p_profile_id: profileId,
+          p_addons: managedUrls.map((url, index) => ({
             url,
             sort_order: index,
             enabled: addonRepository.isAddonEnabled(url),
-            ...(name ? { name } : {})
-          };
-        });
-        if (addonRows.length) {
-          try {
-            await SupabaseApi.upsert(ADDONS_TABLE, addonRows, "user_id,profile_id,url", true);
-          } catch (upsertError) {
-            if (!isOnConflictConstraintError(upsertError)) {
-              throw upsertError;
-            }
-            await SupabaseApi.upsert(ADDONS_TABLE, addonRows, null, true);
-          }
-        }
-        return true;
-      } catch (addonsTableError) {
-        if (!isMissingResourceError(addonsTableError)) {
-          console.warn("Addon sync push addons-table fallback failed", addonsTableError);
-          return false;
-        }
-        console.warn(
-          "Addon sync push addons-table missing, trying tv_addons fallback",
-          addonsTableError
-        );
-      }
-
-      const rows = urls.map((baseUrl, index) => ({
-        owner_id: ownerId,
-        base_url: baseUrl,
-        position: index
-      }));
-      try {
-        await SupabaseApi.delete(TABLE, `owner_id=eq.${encodeURIComponent(ownerId)}`, true);
-        if (rows.length) {
-          await SupabaseApi.upsert(TABLE, rows, "owner_id,base_url", true);
-        }
-        return true;
-      } catch (tvTableError) {
-        console.warn("Addon sync push tv_addons fallback failed", tvTableError);
-        return false;
-      }
+            ...(addonRepository.getAddonDisplayNameOverride(url)
+              ? { name: addonRepository.getAddonDisplayNameOverride(url) }
+              : {})
+          })),
+          p_origin_client_id: getSyncClientId()
+        },
+        true
+      );
+      return true;
     } catch (error) {
       console.warn("Library sync push failed", error);
       return false;

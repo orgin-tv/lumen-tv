@@ -1,20 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-
-function profilesFingerprint(overview) {
-  const profiles =
-    overview?.profiles && typeof overview.profiles === "object" ? overview.profiles : {};
-  return Object.keys(profiles)
-    .sort()
-    .map((key) => `${key}:${String(profiles[key]?.name || "")}`)
-    .join("|");
-}
-
-function remoteProfileCount(overview) {
-  const profiles =
-    overview?.profiles && typeof overview.profiles === "object" ? overview.profiles : {};
-  return Object.keys(profiles).length;
-}
+import { profilesFingerprint, remoteProfileCount } from "./liveSyncPoller.js";
 
 test("live sync fingerprint changes when a profile is added", () => {
   const before = profilesFingerprint({
@@ -36,7 +22,18 @@ test("live sync fingerprint changes when a profile is renamed", () => {
   assert.notEqual(before, after);
 });
 
-test("localBehindRemote when desk has more slots than the TV", () => {
+test("remoteProfileCount tracks desk slots", () => {
   assert.equal(remoteProfileCount({ profiles: { 1: { name: "A" }, 2: { name: "B" } } }), 2);
-  assert.ok(remoteProfileCount({ profiles: { 1: { name: "A" }, 2: { name: "B" } } }) > 1);
+  assert.equal(remoteProfileCount({ profiles: {} }), 0);
+  assert.equal(remoteProfileCount(null), 0);
+});
+
+test("fingerprint is stable regardless of key insertion order", () => {
+  const left = profilesFingerprint({
+    profiles: { 2: { name: "Kids" }, 1: { name: "Primary" } }
+  });
+  const right = profilesFingerprint({
+    profiles: { 1: { name: "Primary" }, 2: { name: "Kids" } }
+  });
+  assert.equal(left, right);
 });

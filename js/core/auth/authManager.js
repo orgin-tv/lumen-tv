@@ -425,7 +425,8 @@ class AuthManagerClass {
           }
 
           this.lastRefreshFailureKind = "transient";
-          return Boolean(accessToken);
+          // Keep the session only while the current access token is still usable.
+          return Boolean(accessToken && !isJwtExpired(accessToken));
         }
         const data = await res.json();
         if (generation !== this.sessionGeneration) {
@@ -434,7 +435,7 @@ class AuthManagerClass {
         }
         if (!data?.access_token) {
           this.lastRefreshFailureKind = "transient";
-          return Boolean(accessToken);
+          return Boolean(accessToken && !isJwtExpired(accessToken));
         }
         SessionStore.accessToken = data.access_token;
         if (data.refresh_token) {
@@ -444,7 +445,7 @@ class AuthManagerClass {
         return true;
       } catch (error) {
         console.warn("Session refresh failed", error);
-        if (accessToken) {
+        if (accessToken && !isJwtExpired(accessToken)) {
           this.lastRefreshFailureKind = "transient";
           return true;
         }

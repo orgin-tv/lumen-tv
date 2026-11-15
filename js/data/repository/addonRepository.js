@@ -10,7 +10,27 @@ const ADDON_ENABLED_STATES_KEY = "installedAddonEnabledStates";
 const PROFILES_KEY = "profiles";
 const PROFILE_SCOPED_VERSION = 1;
 const MANIFEST_SUFFIX = "/manifest.json";
-const DEFAULT_ADDON_URLS = ["https://v3-cinemeta.strem.io", "https://opensubtitles-v3.strem.io"];
+export const DEFAULT_ADDON_URLS = [
+  "https://v3-cinemeta.strem.io",
+  "https://opensubtitles-v3.strem.io"
+];
+
+function normalizeAddonIdentity(url) {
+  return String(url || "")
+    .trim()
+    .replace(/\/manifest\.json$/i, "")
+    .replace(/\/+$/, "")
+    .toLowerCase();
+}
+
+export function isDefaultAddonUrlList(urls = []) {
+  const normalized = Array.from(
+    new Set((Array.isArray(urls) ? urls : []).map(normalizeAddonIdentity).filter(Boolean))
+  );
+  if (!normalized.length) return true;
+  const defaults = new Set(DEFAULT_ADDON_URLS.map(normalizeAddonIdentity));
+  return normalized.length <= defaults.size && normalized.every((url) => defaults.has(url));
+}
 const MANIFEST_CACHE_KEY = "addonManifestCacheV2";
 const MANIFEST_CACHE_VERSION = 2;
 const MANIFEST_CACHE_TTL_MS = 6 * 60 * 60 * 1000;
