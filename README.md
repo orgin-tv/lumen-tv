@@ -1,15 +1,15 @@
-# Lumen TV
+# Origin TV
 
 <p align="center">
-  <img src="assets/brand/lumen_wordmark.svg" alt="Lumen" width="280" />
+  <img src="assets/brand/lumen_wordmark.svg" alt="origin.live" width="320" />
 </p>
 
 <p align="center">
-  Bring your sources together in one TV library — with Sync for the desk,<br />
-  and installable design packages on the glass.
+  <strong>Centralized TV library & live sync</strong><br />
+  Bring sources, profiles, and designs together — one desk, every screen.
 </p>
 
-**LAN beta:** pair with **[Lumen Sync](https://github.com/lumen-tvs/lumen-sync)** using the Sync [`BETA.md`](https://github.com/lumen-tvs/lumen-sync/blob/main/BETA.md) runbook.
+**LAN beta:** pair with **[Origin Sync](https://github.com/orgin-tv/lumen-sync)** using the Sync [`BETA.md`](https://github.com/orgin-tv/lumen-sync/blob/main/BETA.md) runbook.
 
 Open-source fork of [Nuvio TV Smart](https://github.com/NuvioMedia/NuvioTVSmart) (GPLv3).
 
@@ -20,7 +20,7 @@ Open-source fork of [Nuvio TV Smart](https://github.com/NuvioMedia/NuvioTVSmart)
 Requires Node.js 20+ and npm. Sync should already be running on **3847**.
 
 ```bash
-git clone https://github.com/lumen-tvs/lumen-tv.git
+git clone https://github.com/orgin-tv/lumen-tv.git
 cd lumen-tv
 cp local.example.properties local.properties
 ```
@@ -29,10 +29,10 @@ Edit `local.properties` (gitignored). For other devices on the LAN, use your hos
 
 ```properties
 NUVIO_SUPABASE_URL=http://YOUR_LAN_IP:3847/api/bridge
-NUVIO_SUPABASE_ANON_KEY=lumen-local-anon
+NUVIO_SUPABASE_ANON_KEY=origin-local-anon
 TV_LOGIN_WEB_BASE_URL=http://YOUR_LAN_IP:3847/tv-login
 DEVICE_LOGIN_WEB_BASE_URL=http://YOUR_LAN_IP:3847/link
-LUMEN_SYNC_URL=http://YOUR_LAN_IP:3847
+ORIGIN_SYNC_URL=http://YOUR_LAN_IP:3847
 ```
 
 **Security:** never put `*_SECRET` values in client env / `local.properties` for the browser build. Secrets stay server-side and are omitted from `nuvio.env.js`.
