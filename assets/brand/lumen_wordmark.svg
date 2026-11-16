@@ -1,6 +1,12 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 180" role="img" aria-label="origin.live">
-  <g transform="translate(10,10) scale(0.3)">
-    <path fill="#000000" fill-rule="evenodd" d="M256 40 L390 175 L470 200 L400 265 L330 225 L330 295 L400 370 L285 450 L256 410 L227 450 L112 370 L182 295 L182 225 L112 265 L42 200 L122 175 Z M256 115 L315 175 L256 235 L197 175 Z"/>
-  </g>
-  <text x="180" y="115" font-family="Inter, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" font-size="64" font-weight="500" fill="#000000" letter-spacing="-1.2">origin.live</text>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 72" role="img" aria-label="Lumen">
+  <defs>
+    <linearGradient id="lumenGlow" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#F4D39A"/>
+      <stop offset="55%" stop-color="#E8B45A"/>
+      <stop offset="100%" stop-color="#C9892E"/>
+    </linearGradient>
+  </defs>
+  <circle cx="34" cy="36" r="22" fill="url(#lumenGlow)"/>
+  <circle cx="34" cy="36" r="10" fill="#0E0F12"/>
+  <text x="70" y="48" fill="#F5F1EA" font-family="Georgia, 'Times New Roman', serif" font-size="36" font-weight="700" letter-spacing="1.5">Lumen</text>
 </svg>
